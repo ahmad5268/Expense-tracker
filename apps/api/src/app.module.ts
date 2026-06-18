@@ -8,6 +8,8 @@ import { UsersModule } from './users/users.module';
 import { WorkspacesModule } from './workspaces/workspaces.module';
 import { CategoriesModule } from './categories/categories.module';
 import { TransactionsModule } from './transactions/transactions.module';
+import { BudgetsModule } from './budgets/budgets.module';
+import { RecurringModule } from './recurring/recurring.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -21,6 +23,8 @@ import { AppController } from './app.controller';
     WorkspacesModule,
     CategoriesModule,
     TransactionsModule,
+    BudgetsModule,
+    RecurringModule,
   ],
   controllers: [AppController],
 })

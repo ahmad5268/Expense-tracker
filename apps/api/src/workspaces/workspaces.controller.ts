@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, HttpCode, HttpStatus } from '@nestjs/common';
+import { Controller, Post, Get, Put, Delete, Body, Param, UseGuards, HttpCode, HttpStatus, ForbiddenException, Request } from '@nestjs/common';
 import { WorkspacesService } from './workspaces.service';
 import { CreateWorkspaceDto } from './dto/create-workspace.dto';
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto';
@@ -6,6 +6,7 @@ import { InviteMemberDto } from './dto/invite-member.dto';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { WorkspaceMemberGuard } from './guards/workspace-member.guard';
 import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator';
+import { MemberRole } from '@prisma/client';
 
 @Controller('workspaces')
 @UseGuards(JwtAuthGuard)
@@ -24,7 +25,11 @@ export class WorkspacesController {
 
   @Put(':workspaceId')
   @UseGuards(WorkspaceMemberGuard)
-  update(@Param('workspaceId') workspaceId: string, @Body() dto: UpdateWorkspaceDto) {
+  update(@Param('workspaceId') workspaceId: string, @Body() dto: UpdateWorkspaceDto, @Request() req: any) {
+    const member = req.workspaceMember;
+    if (![MemberRole.OWNER, MemberRole.ADMIN].includes(member.role)) {
+      throw new ForbiddenException('Only workspace owners and admins can update workspace settings');
+    }
     return this.workspacesService.update(workspaceId, dto);
   }
 
@@ -34,7 +39,12 @@ export class WorkspacesController {
     @Param('workspaceId') workspaceId: string,
     @CurrentUser() user: JwtPayload,
     @Body() dto: InviteMemberDto,
+    @Request() req: any,
   ) {
+    const member = req.workspaceMember;
+    if (![MemberRole.OWNER, MemberRole.ADMIN].includes(member.role)) {
+      throw new ForbiddenException('Only workspace owners and admins can invite members');
+    }
     return this.workspacesService.invite(workspaceId, user.sub, dto.email);
   }
 

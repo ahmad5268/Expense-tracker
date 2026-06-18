@@ -12,6 +12,9 @@ const mockPrisma = {
     update: jest.fn(),
     delete: jest.fn(),
   },
+  category: {
+    findFirst: jest.fn(),
+  },
 };
 
 const mockEvents = { emit: jest.fn() };
@@ -40,6 +43,7 @@ describe('TransactionsService', () => {
   });
 
   it('create returns new transaction and emits event', async () => {
+    mockPrisma.category.findFirst.mockResolvedValue({ id: 'c1', workspaceId: 'w1' });
     mockPrisma.transaction.create.mockResolvedValue({ id: 't1', amount: 1000 });
     const result = await service.create('w1', 'u1', {
       categoryId: 'c1',

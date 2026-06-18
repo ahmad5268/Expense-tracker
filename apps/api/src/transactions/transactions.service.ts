@@ -41,6 +41,7 @@ export class TransactionsService {
   }
 
   async create(workspaceId: string, userId: string, dto: CreateTransactionDto) {
+    await this.assertCategoryInWorkspace(workspaceId, dto.categoryId);
     const transaction = await this.prisma.transaction.create({
       data: { ...dto, date: new Date(dto.date), workspaceId, userId },
       include: { category: true },
@@ -52,6 +53,7 @@ export class TransactionsService {
 
   async update(workspaceId: string, transactionId: string, dto: UpdateTransactionDto) {
     await this.assertOwnership(workspaceId, transactionId);
+    if (dto.categoryId) await this.assertCategoryInWorkspace(workspaceId, dto.categoryId);
     return this.prisma.transaction.update({
       where: { id: transactionId },
       data: { ...dto, ...(dto.date && { date: new Date(dto.date) }) },
@@ -67,5 +69,10 @@ export class TransactionsService {
   private async assertOwnership(workspaceId: string, transactionId: string) {
     const tx = await this.prisma.transaction.findUnique({ where: { id: transactionId } });
     if (!tx || tx.workspaceId !== workspaceId) throw new NotFoundException('Transaction not found');
+  }
+
+  private async assertCategoryInWorkspace(workspaceId: string, categoryId: string) {
+    const category = await this.prisma.category.findFirst({ where: { id: categoryId, workspaceId } });
+    if (!category) throw new NotFoundException('Category not found in this workspace');
   }
 }

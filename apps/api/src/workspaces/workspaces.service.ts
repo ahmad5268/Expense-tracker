@@ -77,14 +77,21 @@ export class WorkspacesService {
       data: { workspaceId, invitedEmail: email, invitedById, expiresAt: addHours(new Date(), 72) },
     });
 
+    const escapedName = workspace.name
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+
     const sgMail = await import('@sendgrid/mail');
     sgMail.default.setApiKey(process.env.SENDGRID_API_KEY ?? '');
     await sgMail.default.send({
       to: email,
       from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
-      subject: `You've been invited to ${workspace.name}`,
+      subject: `You've been invited to join a workspace`,
       text: `Accept your invite: ${process.env.FRONTEND_URL}/invite/${invite.token}`,
-      html: `<p>You've been invited to join <strong>${workspace.name}</strong>.</p>
+      html: `<p>You've been invited to join <strong>${escapedName}</strong>.</p>
              <p><a href="${process.env.FRONTEND_URL}/invite/${invite.token}">Accept invite</a> (expires in 72 hours)</p>`,
     });
 
