@@ -18,6 +18,7 @@ model User {
   refreshTokenHash     String?
   passwordResetToken   String?
   passwordResetExpiry  DateTime?
+  fcmToken             String?
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
 
