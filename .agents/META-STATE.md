@@ -19,9 +19,9 @@
 | Wave | Plans | Status | Contract |
 |---|---|---|---|
 | 1 | be-1 ∥ fl-1 | COMPLETE | docs/contracts/wave-1-foundation.md |
-| 2 | be-2 ∥ fl-2 | IN_PROGRESS | docs/contracts/wave-2-auth.md |
-| 3 | be-3 ∥ fl-3 | PENDING | — |
-| 4 | be-4 ∥ fl-4 ∥ fl-5 ∥ fl-6 ∥ fl-9 | PENDING | — |
+| 2 | be-2 ∥ fl-2 | COMPLETE | docs/contracts/wave-2-auth.md |
+| 3 | be-3 ∥ fl-3 | COMPLETE | — |
+| 4 | be-4 ∥ fl-4 ∥ fl-5 ∥ fl-6 ∥ fl-9 | IN_PROGRESS | — |
 | 5 | be-5 ∥ fl-7 ∥ fl-8 | PENDING | — |
 | 6 | be-6 ∥ fl-10 | PENDING | — |
 | 7 | be-7 | PENDING | — |
@@ -32,16 +32,16 @@
 ## Plan Checklist
 
 - [x] be-1 — Backend API Phase 1 (Foundation) — commit bea989a
-- [ ] be-2 — Backend API Phase 2 (Auth)
-- [ ] be-3 — Backend API Phase 3 (Core Domain)
+- [x] be-2 — Backend API Phase 2 (Auth) — commits 4a43d33, d592777
+- [x] be-3 — Backend API Phase 3 (Core Domain) — commit bc2b48c
 - [ ] be-4 — Backend API Phase 4 (Budgets + Recurring)
 - [ ] be-5 — Backend API Phase 5 (Background Jobs)
 - [ ] be-6 — Backend API Phase 6 (Notifications)
 - [ ] be-7 — Backend API Phase 7 (Reports + Export)
 - [ ] be-8 — Backend API Phase 8 (Docker + CI/CD)
 - [x] fl-1 — Flutter Phase 1 (Foundation) — verified: 8/8 tests pass, flutter analyze clean
-- [ ] fl-2 — Flutter Phase 2 (Auth UI)
-- [ ] fl-3 — Flutter Phase 3 (Shared Models + WorkspaceProvider)
+- [x] fl-2 — Flutter Phase 2 (Auth UI) — commit 79dd37f
+- [x] fl-3 — Flutter Phase 3 (Shared Models + WorkspaceProvider) — commit bc2b48c
 - [ ] fl-4 — Flutter Phase 4 (Dashboard)
 - [ ] fl-5 — Flutter Phase 5 (Transactions UI)
 - [ ] fl-6 — Flutter Phase 6 (Workspaces UI)
@@ -70,13 +70,28 @@
 
 ### Wave 2 — Auth
 
-**Status:** IN_PROGRESS
+**Status:** COMPLETE
 **Contract:** docs/contracts/wave-2-auth.md
 
 | Plan ID | Title | Status | Tasks done | Last commit |
 |---|---|---|---|---|
-| be-2 | Auth Module | IN_PROGRESS | 0/8 | — |
-| fl-2 | Auth UI | IN_PROGRESS | 0/5 | — |
+| be-2 | Auth Module | COMPLETE | 8/8 + security fix | d592777 |
+| fl-2 | Auth UI | COMPLETE | 6/6; 10 tests green, zero lint | 79dd37f |
+
+**Notes:**
+- be-2 security fix: OAuth callbacks use exchange-code pattern (UUID, 60s TTL) instead of tokens in URL params
+- be-2 e2e tests deferred: require `docker compose up -d` + `npx prisma migrate dev`
+- fl-2 tests use `implements AuthService` fake (no Mockito, avoids build_runner)
+
+### Wave 3 — Core Domain
+
+**Status:** COMPLETE
+**Commit:** bc2b48c
+
+| Plan ID | Title | Status | Tasks done | Last commit |
+|---|---|---|---|---|
+| be-3 | Core Domain Modules | COMPLETE | Users, Workspaces, Categories, Transactions; 10 suites/23 tests green | bc2b48c |
+| fl-3 | Shared Models + WorkspaceProvider | COMPLETE | 7 Freezed models, CurrencyFormatter, WorkspaceNotifier; 36 tests, zero lint | bc2b48c |
 
 ---
 
