@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import '../../features/auth/auth_provider.dart';
+import '../../features/auth/login_screen.dart';
+import '../../features/auth/register_screen.dart';
+import '../../features/auth/forgot_password_screen.dart';
 
 // Route paths — single source of truth
 class AppRoutes {
@@ -18,7 +22,12 @@ class AppRoutes {
   static const workspaceSettings = '/workspaces/:id/settings';
 }
 
-// Temporary placeholder screen for route stubs
+final _authRoutes = {
+  AppRoutes.login,
+  AppRoutes.register,
+  AppRoutes.forgotPassword,
+};
+
 class _PlaceholderScreen extends StatelessWidget {
   final String name;
   const _PlaceholderScreen(this.name);
@@ -31,59 +40,68 @@ class _PlaceholderScreen extends StatelessWidget {
 }
 
 final appRouterProvider = Provider<GoRouter>((ref) {
-  // Auth redirect will be wired in Phase 2 once AuthProvider exists.
+  final authListenable = ValueNotifier<AsyncValue<Object?>>(const AsyncLoading());
+
+  ref.listen(authNotifierProvider, (_, next) {
+    authListenable.value = next;
+  });
+
   return GoRouter(
     initialLocation: AppRoutes.login,
+    refreshListenable: authListenable,
+    redirect: (context, state) {
+      final authState = ref.read(authNotifierProvider);
+      final isAuthenticated = authState.valueOrNull != null;
+      final isOnAuthRoute = _authRoutes.contains(state.matchedLocation);
+
+      if (!isAuthenticated &&
+          !isOnAuthRoute &&
+          !state.matchedLocation.startsWith('/invite')) {
+        return AppRoutes.login;
+      }
+      if (isAuthenticated && isOnAuthRoute) {
+        return AppRoutes.dashboard;
+      }
+      return null;
+    },
     routes: [
+      GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
       GoRoute(
-        path: AppRoutes.login,
-        builder: (_, __) => const _PlaceholderScreen('Login'),
-      ),
+          path: AppRoutes.register,
+          builder: (_, __) => const RegisterScreen()),
       GoRoute(
-        path: AppRoutes.register,
-        builder: (_, __) => const _PlaceholderScreen('Register'),
-      ),
-      GoRoute(
-        path: AppRoutes.forgotPassword,
-        builder: (_, __) => const _PlaceholderScreen('Forgot Password'),
-      ),
+          path: AppRoutes.forgotPassword,
+          builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(
         path: AppRoutes.inviteAccept,
-        builder: (_, state) => _PlaceholderScreen(
-            'Accept Invite ${state.pathParameters['token']}'),
+        builder: (_, state) =>
+            _PlaceholderScreen('Accept Invite ${state.pathParameters['token']}'),
       ),
       GoRoute(
-        path: AppRoutes.dashboard,
-        builder: (_, __) => const _PlaceholderScreen('Dashboard'),
-      ),
+          path: AppRoutes.dashboard,
+          builder: (_, __) => const _PlaceholderScreen('Dashboard')),
       GoRoute(
-        path: AppRoutes.transactions,
-        builder: (_, __) => const _PlaceholderScreen('Transactions'),
-      ),
+          path: AppRoutes.transactions,
+          builder: (_, __) => const _PlaceholderScreen('Transactions')),
       GoRoute(
-        path: AppRoutes.budgets,
-        builder: (_, __) => const _PlaceholderScreen('Budgets'),
-      ),
+          path: AppRoutes.budgets,
+          builder: (_, __) => const _PlaceholderScreen('Budgets')),
       GoRoute(
-        path: AppRoutes.recurring,
-        builder: (_, __) => const _PlaceholderScreen('Recurring'),
-      ),
+          path: AppRoutes.recurring,
+          builder: (_, __) => const _PlaceholderScreen('Recurring')),
       GoRoute(
-        path: AppRoutes.reports,
-        builder: (_, __) => const _PlaceholderScreen('Reports'),
-      ),
+          path: AppRoutes.reports,
+          builder: (_, __) => const _PlaceholderScreen('Reports')),
       GoRoute(
-        path: AppRoutes.notifications,
-        builder: (_, __) => const _PlaceholderScreen('Notifications'),
-      ),
+          path: AppRoutes.notifications,
+          builder: (_, __) => const _PlaceholderScreen('Notifications')),
       GoRoute(
-        path: AppRoutes.workspaces,
-        builder: (_, __) => const _PlaceholderScreen('Workspaces'),
-      ),
+          path: AppRoutes.workspaces,
+          builder: (_, __) => const _PlaceholderScreen('Workspaces')),
       GoRoute(
         path: AppRoutes.workspaceSettings,
-        builder: (_, state) => _PlaceholderScreen(
-            'Workspace Settings ${state.pathParameters['id']}'),
+        builder: (_, state) =>
+            _PlaceholderScreen('Settings ${state.pathParameters['id']}'),
       ),
     ],
   );
