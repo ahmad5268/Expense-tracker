@@ -15,9 +15,11 @@ model User {
   avatarUrl        String?
   oauthProvider    String?
   oauthId          String?
-  refreshTokenHash String?
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
+  refreshTokenHash     String?
+  passwordResetToken   String?
+  passwordResetExpiry  DateTime?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
 
   ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
   memberships     WorkspaceMember[]
