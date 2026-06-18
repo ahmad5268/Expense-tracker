@@ -47,13 +47,10 @@ dev_dependencies:
   integration_test:
     sdk: flutter
 
-  # Code generation
+  # Code generation (riverpod_generator + custom_lint added in fl-3 once version compat resolved)
   build_runner: ^2.4.12
   freezed: ^2.5.2
   json_serializable: ^6.8.0
-  riverpod_generator: ^2.4.0
-  riverpod_lint: ^2.3.12
-  custom_lint: ^0.6.7
 
   # Testing
   mockito: ^5.4.4

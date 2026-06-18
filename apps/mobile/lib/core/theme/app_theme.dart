@@ -20,12 +20,11 @@ class AppTheme {
         colorScheme: ColorScheme.fromSeed(
           seedColor: _seedColor,
           brightness: Brightness.light,
-          background: colorBackground,
           surface: colorSurface,
         ),
         scaffoldBackgroundColor: colorBackground,
         appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           color: colorSurface,
           shape: RoundedRectangleBorder(
@@ -89,7 +88,7 @@ class AppTheme {
           brightness: Brightness.dark,
         ),
         appBarTheme: const AppBarTheme(centerTitle: true, elevation: 0),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(12),

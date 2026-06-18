@@ -42,6 +42,7 @@ class ApiClient {
       onError: (error, handler) async {
         if (error.response?.statusCode == 401 && !_isRefreshing) {
           _isRefreshing = true;
+          var tokenRefreshed = false;
           try {
             final refreshToken = await _storage.getRefreshToken();
             if (refreshToken == null) throw Exception('No refresh token');
@@ -60,13 +61,15 @@ class ApiClient {
               accessToken: newAccess,
               refreshToken: newRefresh,
             );
+            tokenRefreshed = true;
 
             final retryOptions = error.requestOptions;
             retryOptions.headers['Authorization'] = 'Bearer $newAccess';
             final retried = await dio.fetch(retryOptions);
             handler.resolve(retried);
           } catch (_) {
-            await _storage.clearTokens();
+            // Only clear tokens if the refresh itself failed, not if the retry failed
+            if (!tokenRefreshed) await _storage.clearTokens();
             handler.next(error);
           } finally {
             _isRefreshing = false;

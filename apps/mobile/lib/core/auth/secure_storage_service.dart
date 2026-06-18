@@ -3,9 +3,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-// On web, flutter_secure_storage falls back to localStorage which is not secure.
-// Use SharedPreferences on web (same limitation, but explicit).
-// On mobile, use FlutterSecureStorage (Keychain / Keystore).
+// On web, flutter_secure_storage uses localStorage (not secure).
+// We explicitly use SharedPreferences on web and FlutterSecureStorage on mobile.
+// The runtime choice is made once in create(); withPrefs() is for testing.
 class SecureStorageService {
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
@@ -30,9 +30,10 @@ class SecureStorageService {
     required String accessToken,
     required String refreshToken,
   }) async {
-    if (kIsWeb) {
-      await _prefs!.setString(_accessKey, accessToken);
-      await _prefs.setString(_refreshKey, refreshToken);
+    final prefs = _prefs;
+    if (prefs != null) {
+      await prefs.setString(_accessKey, accessToken);
+      await prefs.setString(_refreshKey, refreshToken);
     } else {
       await _secure!.write(key: _accessKey, value: accessToken);
       await _secure.write(key: _refreshKey, value: refreshToken);
@@ -40,21 +41,22 @@ class SecureStorageService {
   }
 
   Future<String?> getAccessToken() async {
-    return kIsWeb
-        ? _prefs!.getString(_accessKey)
-        : _secure!.read(key: _accessKey);
+    final prefs = _prefs;
+    if (prefs != null) return prefs.getString(_accessKey);
+    return _secure!.read(key: _accessKey);
   }
 
   Future<String?> getRefreshToken() async {
-    return kIsWeb
-        ? _prefs!.getString(_refreshKey)
-        : _secure!.read(key: _refreshKey);
+    final prefs = _prefs;
+    if (prefs != null) return prefs.getString(_refreshKey);
+    return _secure!.read(key: _refreshKey);
   }
 
   Future<void> clearTokens() async {
-    if (kIsWeb) {
-      await _prefs!.remove(_accessKey);
-      await _prefs.remove(_refreshKey);
+    final prefs = _prefs;
+    if (prefs != null) {
+      await prefs.remove(_accessKey);
+      await prefs.remove(_refreshKey);
     } else {
       await _secure!.delete(key: _accessKey);
       await _secure.delete(key: _refreshKey);
