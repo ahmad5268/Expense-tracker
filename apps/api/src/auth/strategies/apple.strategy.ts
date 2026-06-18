@@ -13,6 +13,7 @@ export class AppleStrategy extends PassportStrategy(Strategy, 'apple') {
       privateKeyString: process.env.APPLE_PRIVATE_KEY ?? '',
       callbackURL: process.env.APPLE_CALLBACK_URL ?? 'http://localhost:3000/auth/apple/callback',
       scope: ['email', 'name'],
+      // TODO(security): add CSRF state once express-session is configured (see google.strategy.ts)
     });
   }
 

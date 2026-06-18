@@ -1,8 +1,10 @@
 import {
   Controller, Post, Body, UseGuards, Get, Req, Res, HttpCode, HttpStatus,
+  NotFoundException,
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Throttle } from '@nestjs/throttler';
+import { randomUUID } from 'crypto';
 import { AuthService } from './auth.service';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -14,6 +16,27 @@ import { GoogleAuthGuard } from './guards/google-auth.guard';
 import { AppleAuthGuard } from './guards/apple-auth.guard';
 import { CurrentUser, JwtPayload } from '../common/decorators/current-user.decorator';
 import { RefreshPayload } from './strategies/jwt-refresh.strategy';
+import { TokenPair } from './auth.service';
+
+// Single-use exchange codes for OAuth callback — avoids tokens in redirect URLs.
+// Code expires in 60 s and is consumed on first read.
+const _exchangeCodes = new Map<string, { tokens: TokenPair; expiresAt: number }>();
+
+function issueExchangeCode(tokens: TokenPair): string {
+  const code = randomUUID();
+  _exchangeCodes.set(code, { tokens, expiresAt: Date.now() + 60_000 });
+  return code;
+}
+
+function consumeExchangeCode(code: string): TokenPair | null {
+  const entry = _exchangeCodes.get(code);
+  if (!entry || Date.now() > entry.expiresAt) {
+    _exchangeCodes.delete(code);
+    return null;
+  }
+  _exchangeCodes.delete(code);
+  return entry.tokens;
+}
 
 @Controller('auth')
 @Throttle({ default: { limit: 5, ttl: 60000 } })
@@ -54,17 +77,25 @@ export class AuthController {
   @Get('google/callback')
   @UseGuards(GoogleAuthGuard)
   googleCallback(@Req() req: Request, @Res() res: Response) {
-    const tokens = req.user as { accessToken: string; refreshToken: string };
-    const params = new URLSearchParams(tokens);
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?${params}`);
+    const tokens = req.user as TokenPair;
+    const code = issueExchangeCode(tokens);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?code=${code}`);
   }
 
   @Get('apple/callback')
   @UseGuards(AppleAuthGuard)
   appleCallback(@Req() req: Request, @Res() res: Response) {
-    const tokens = req.user as { accessToken: string; refreshToken: string };
-    const params = new URLSearchParams(tokens);
-    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?${params}`);
+    const tokens = req.user as TokenPair;
+    const code = issueExchangeCode(tokens);
+    res.redirect(`${process.env.FRONTEND_URL}/auth/callback?code=${code}`);
+  }
+
+  @Post('exchange')
+  @HttpCode(HttpStatus.OK)
+  exchange(@Body('code') code: string) {
+    const tokens = consumeExchangeCode(code);
+    if (!tokens) throw new NotFoundException('Exchange code is invalid or expired');
+    return tokens;
   }
 
   @Post('forgot-password')
