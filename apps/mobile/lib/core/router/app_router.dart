@@ -5,8 +5,16 @@ import '../../features/auth/auth_provider.dart';
 import '../../features/auth/login_screen.dart';
 import '../../features/auth/register_screen.dart';
 import '../../features/auth/forgot_password_screen.dart';
+import '../../features/dashboard/dashboard_screen.dart';
+import '../../features/transactions/transactions_screen.dart';
+import '../../features/notifications/notifications_screen.dart';
+import '../../features/workspaces/workspaces_screen.dart';
+import '../../features/workspaces/create_workspace_screen.dart';
+import '../../features/workspaces/workspace_settings_screen.dart';
+import '../../features/workspaces/members_screen.dart';
+import '../../features/workspaces/invite_screen.dart';
+import '../../features/workspaces/accept_invite_screen.dart';
 
-// Route paths — single source of truth
 class AppRoutes {
   static const login = '/login';
   static const register = '/register';
@@ -19,7 +27,10 @@ class AppRoutes {
   static const reports = '/reports';
   static const notifications = '/notifications';
   static const workspaces = '/workspaces';
+  static const workspacesCreate = '/workspaces/create';
   static const workspaceSettings = '/workspaces/:id/settings';
+  static const workspaceMembers = '/workspaces/:id/settings/members';
+  static const workspaceInvite = '/workspaces/:id/settings/invite';
 }
 
 final _authRoutes = {
@@ -66,42 +77,31 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     },
     routes: [
       GoRoute(path: AppRoutes.login, builder: (_, __) => const LoginScreen()),
-      GoRoute(
-          path: AppRoutes.register,
-          builder: (_, __) => const RegisterScreen()),
-      GoRoute(
-          path: AppRoutes.forgotPassword,
-          builder: (_, __) => const ForgotPasswordScreen()),
+      GoRoute(path: AppRoutes.register, builder: (_, __) => const RegisterScreen()),
+      GoRoute(path: AppRoutes.forgotPassword, builder: (_, __) => const ForgotPasswordScreen()),
       GoRoute(
         path: AppRoutes.inviteAccept,
-        builder: (_, state) =>
-            _PlaceholderScreen('Accept Invite ${state.pathParameters['token']}'),
+        builder: (_, state) => AcceptInviteScreen(token: state.pathParameters['token']!),
       ),
-      GoRoute(
-          path: AppRoutes.dashboard,
-          builder: (_, __) => const _PlaceholderScreen('Dashboard')),
-      GoRoute(
-          path: AppRoutes.transactions,
-          builder: (_, __) => const _PlaceholderScreen('Transactions')),
-      GoRoute(
-          path: AppRoutes.budgets,
-          builder: (_, __) => const _PlaceholderScreen('Budgets')),
-      GoRoute(
-          path: AppRoutes.recurring,
-          builder: (_, __) => const _PlaceholderScreen('Recurring')),
-      GoRoute(
-          path: AppRoutes.reports,
-          builder: (_, __) => const _PlaceholderScreen('Reports')),
-      GoRoute(
-          path: AppRoutes.notifications,
-          builder: (_, __) => const _PlaceholderScreen('Notifications')),
-      GoRoute(
-          path: AppRoutes.workspaces,
-          builder: (_, __) => const _PlaceholderScreen('Workspaces')),
+      GoRoute(path: AppRoutes.dashboard, builder: (_, __) => const DashboardScreen()),
+      GoRoute(path: AppRoutes.transactions, builder: (_, __) => const TransactionsScreen()),
+      GoRoute(path: AppRoutes.budgets, builder: (_, __) => const _PlaceholderScreen('Budgets')),
+      GoRoute(path: AppRoutes.recurring, builder: (_, __) => const _PlaceholderScreen('Recurring')),
+      GoRoute(path: AppRoutes.reports, builder: (_, __) => const _PlaceholderScreen('Reports')),
+      GoRoute(path: AppRoutes.notifications, builder: (_, __) => const NotificationsScreen()),
+      GoRoute(path: AppRoutes.workspaces, builder: (_, __) => const WorkspacesScreen()),
+      GoRoute(path: AppRoutes.workspacesCreate, builder: (_, __) => const CreateWorkspaceScreen()),
       GoRoute(
         path: AppRoutes.workspaceSettings,
-        builder: (_, state) =>
-            _PlaceholderScreen('Settings ${state.pathParameters['id']}'),
+        builder: (_, state) => WorkspaceSettingsScreen(workspaceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.workspaceMembers,
+        builder: (_, state) => MembersScreen(workspaceId: state.pathParameters['id']!),
+      ),
+      GoRoute(
+        path: AppRoutes.workspaceInvite,
+        builder: (_, state) => InviteScreen(workspaceId: state.pathParameters['id']!),
       ),
     ],
   );

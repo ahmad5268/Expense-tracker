@@ -58,6 +58,25 @@ class WorkspaceNotifier extends Notifier<WorkspaceState> {
   void setActiveWorkspace(Workspace workspace) {
     state = state.copyWith(activeWorkspace: workspace);
   }
+
+  void setActive(String workspaceId) {
+    final workspace = state.workspaces.where((w) => w.id == workspaceId).firstOrNull;
+    if (workspace != null) state = state.copyWith(activeWorkspace: workspace);
+  }
+
+  Future<void> inviteMember(String workspaceId, String email) async {
+    await _api.dio.post('/workspaces/$workspaceId/invite', data: {'email': email});
+  }
+
+  Future<void> removeMember(String workspaceId, String userId) async {
+    await _api.dio.delete('/workspaces/$workspaceId/members/$userId');
+    state = state.copyWith(
+      workspaces: state.workspaces.map((w) {
+        if (w.id != workspaceId) return w;
+        return w.copyWith(members: w.members.where((m) => m.userId != userId).toList());
+      }).toList(),
+    );
+  }
 }
 
 final workspaceNotifierProvider =
