@@ -1,0 +1,200 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String   @id @default(cuid())
+  email            String   @unique
+  passwordHash     String?
+  name             String
+  avatarUrl        String?
+  oauthProvider    String?
+  oauthId          String?
+  refreshTokenHash String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  ownedWorkspaces Workspace[]       @relation("WorkspaceOwner")
+  memberships     WorkspaceMember[]
+  transactions    Transaction[]
+  notifications   Notification[]
+  sentInvites     WorkspaceInvite[] @relation("InviteSender")
+
+  @@index([oauthProvider, oauthId])
+}
+
+model Workspace {
+  id        String   @id @default(cuid())
+  name      String
+  currency  String   @default("USD")
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  owner          User              @relation("WorkspaceOwner", fields: [ownerId], references: [id])
+  members        WorkspaceMember[]
+  categories     Category[]
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
+  budgets        Budget[]
+  invites        WorkspaceInvite[]
+}
+
+enum MemberRole {
+  OWNER
+  ADMIN
+  MEMBER
+}
+
+model WorkspaceMember {
+  workspaceId String
+  userId      String
+  role        MemberRole @default(MEMBER)
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@id([workspaceId, userId])
+}
+
+enum CategoryType {
+  EXPENSE
+  INCOME
+}
+
+model Category {
+  id          String       @id @default(cuid())
+  workspaceId String
+  name        String
+  icon        String       @default("category")
+  color       String       @default("#6366f1")
+  type        CategoryType
+
+  workspace      Workspace       @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  transactions   Transaction[]
+  recurringRules RecurringRule[]
+  budgets        Budget[]
+
+  @@unique([workspaceId, name, type])
+}
+
+enum TransactionType {
+  EXPENSE
+  INCOME
+}
+
+model Transaction {
+  id              String          @id @default(cuid())
+  workspaceId     String
+  userId          String
+  categoryId      String
+  amount          Int
+  description     String?
+  date            DateTime
+  type            TransactionType
+  recurringRuleId String?
+  createdAt       DateTime        @default(now())
+
+  workspace     Workspace      @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id])
+  category      Category       @relation(fields: [categoryId], references: [id])
+  recurringRule RecurringRule? @relation(fields: [recurringRuleId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId, date])
+  @@index([workspaceId, categoryId])
+}
+
+enum Frequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+}
+
+model RecurringRule {
+  id          String          @id @default(cuid())
+  workspaceId String
+  categoryId  String
+  amount      Int
+  description String?
+  type        TransactionType
+  frequency   Frequency
+  startDate   DateTime
+  endDate     DateTime?
+  nextRunAt   DateTime
+  isActive    Boolean         @default(true)
+  createdAt   DateTime        @default(now())
+
+  workspace    Workspace     @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category     Category      @relation(fields: [categoryId], references: [id])
+  transactions Transaction[]
+
+  @@index([nextRunAt, isActive])
+}
+
+enum BudgetPeriod {
+  MONTHLY
+  YEARLY
+}
+
+model Budget {
+  id          String       @id @default(cuid())
+  workspaceId String
+  categoryId  String?
+  amount      Int
+  period      BudgetPeriod
+  year        Int
+  month       Int?
+  createdAt   DateTime     @default(now())
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+
+  @@unique([workspaceId, categoryId, period, year, month])
+  @@index([workspaceId, year, month])
+}
+
+enum NotificationType {
+  BUDGET_ALERT
+  RECURRING_REMINDER
+  MONTHLY_SUMMARY
+  INVITE
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  type      NotificationType
+  payload   Json
+  readAt    DateTime?
+  createdAt DateTime         @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}
+
+enum InviteStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+}
+
+model WorkspaceInvite {
+  id           String       @id @default(cuid())
+  workspaceId  String
+  invitedEmail String
+  invitedById  String
+  token        String       @unique @default(cuid())
+  status       InviteStatus @default(PENDING)
+  expiresAt    DateTime
+
+  workspace Workspace @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  invitedBy User      @relation("InviteSender", fields: [invitedById], references: [id])
+
+  @@index([token])
+}

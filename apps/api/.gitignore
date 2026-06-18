@@ -1,0 +1,25 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment secrets
+.env
+.env.local
+.env.*.local
+
+# Logs
+*.log
+npm-debug.log*
+
+# Prisma generated client
+node_modules/.prisma/
+
+# Coverage
+coverage/
+
+# IDE
+.idea/
+.vscode/
+*.iml

@@ -1,0 +1,19 @@
+# Node
+node_modules/
+
+# Secrets
+.env
+.env.local
+
+# Build artifacts
+dist/
+build/
+
+# Flutter generated
+.dart_tool/
+*.g.dart
+*.freezed.dart
+
+# OS
+.DS_Store
+Thumbs.db

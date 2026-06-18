@@ -128,6 +128,7 @@ git commit -m "feat: add docker-compose for local postgres and redis"
 ---
 
 ## Task 2: Prisma schema + first migration
+Depends-on: 1
 
 **Files:**
 - Create: `apps/api/prisma/schema.prisma`
@@ -382,6 +383,7 @@ git commit -m "feat: add full prisma schema with init migration"
 ---
 
 ## Task 3: PrismaService + PrismaModule
+Depends-on: 2
 
 **Files:**
 - Create: `apps/api/src/prisma/prisma.service.ts`
@@ -477,6 +479,7 @@ git commit -m "feat: add PrismaService and global PrismaModule"
 ---
 
 ## Task 4: Common utilities
+Depends-on: 2
 
 **Files:**
 - Create: `apps/api/src/common/filters/http-exception.filter.ts`
@@ -659,6 +662,7 @@ git commit -m "feat: add global exception filter, transform interceptor, current
 ---
 
 ## Task 5: AppModule + main.ts + health check
+Depends-on: 3, 4
 
 **Files:**
 - Modify: `apps/api/src/app.module.ts`
@@ -754,6 +758,7 @@ git commit -m "feat: wire up AppModule, global pipes/filter/interceptor, health 
 ---
 
 ## Task 6: Integration test — DB connectivity
+Depends-on: 5
 
 **Files:**
 - Create: `apps/api/test/prisma-health.e2e-spec.ts`
@@ -853,6 +858,7 @@ git commit -m "test: add e2e test for app bootstrap and db connectivity"
 ---
 
 ## Task 7: .gitignore + final cleanup
+Depends-on: 6
 
 **Files:**
 - Modify: `.gitignore` (repo root)

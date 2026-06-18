@@ -1,4 +1,4 @@
-# Backend API — Phase 2: Authentication Implementation Plan
+﻿# Backend API — Phase 2: Authentication Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -126,6 +126,7 @@ git commit -m "feat(auth): add auth DTOs with validation"
 ---
 
 ## Task 2: JWT strategies + guards
+Depends-on: 1
 
 **Files:**
 - Create: `apps/api/src/auth/strategies/jwt.strategy.ts`
@@ -223,6 +224,7 @@ git commit -m "feat(auth): add JWT access and refresh strategies and guards"
 ---
 
 ## Task 3: AuthService — register + login + token issuance
+Depends-on: 1, 2
 
 **Files:**
 - Create: `apps/api/src/auth/auth.service.ts`
@@ -343,6 +345,8 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
+import { addHours } from 'date-fns';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
 import { JwtPayload } from '../common/decorators/current-user.decorator';
@@ -427,12 +431,32 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) return; // Silently succeed — don't reveal whether email exists
 
-    const resetToken = await this.jwt.signAsync(
-      { sub: user.id, email: user.email, purpose: 'password-reset' },
-      { expiresIn: '1h' },
-    );
+    // Store a UUID reset token in the DB with a 1-hour expiry.
+    // Using a DB-stored token (rather than a JWT) ensures single-use invalidation
+    // on consumption and allows server-side revocation.
+    const token = randomUUID();
+    const expiresAt = addHours(new Date(), 1);
 
-    await this.sendPasswordResetEmail(email, resetToken);
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { passwordResetToken: token, passwordResetExpiry: expiresAt },
+    });
+
+    const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+
+    const sgMail = await import('@sendgrid/mail');
+    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY ?? '');
+    await sgMail.default.send({
+      to: email,
+      from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
+      subject: 'Reset your Expense Tracker password',
+      html: `
+        <h2>Password Reset Request</h2>
+        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+        <p><a href="${resetLink}" style="background:#4f46e5;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none">Reset Password</a></p>
+        <p>If you didn't request this, ignore this email.</p>
+      `,
+    });
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
@@ -471,20 +495,40 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private async sendPasswordResetEmail(email: string, token: string): Promise<void> {
-    const sgMail = await import('@sendgrid/mail');
-    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY ?? '');
-    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
-    await sgMail.default.send({
-      to: email,
-      from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
-      subject: 'Reset your password',
-      text: `Click the link to reset your password (expires in 1 hour): ${resetUrl}`,
-      html: `<p>Click <a href="${resetUrl}">here</a> to reset your password. This link expires in 1 hour.</p>`,
-    });
-  }
+  // Note: sendPasswordResetEmail is now inlined into forgotPassword() above.
+  // The email is sent directly from forgotPassword with the full branded HTML template.
+  // No separate private method is needed.
 }
 ```
+
+> **Prisma schema update required for `forgotPassword`:**
+> Add these two nullable fields to the `User` model in `prisma/schema.prisma` (create a migration `add-user-password-reset-fields`):
+> ```prisma
+> model User {
+>   // ... existing fields ...
+>   passwordResetToken   String?   // UUID stored on forgotPassword call
+>   passwordResetExpiry  DateTime? // 1-hour TTL from token issuance
+> }
+> ```
+> Run: `npx prisma migrate dev --name add-user-password-reset-fields`
+>
+> **`resetPassword` must also be updated** to consume the DB token (not the JWT-based token in the current stub):
+> ```typescript
+> async resetPassword(token: string, newPassword: string): Promise<void> {
+>   const user = await this.prisma.user.findFirst({
+>     where: { passwordResetToken: token, passwordResetExpiry: { gt: new Date() } },
+>   });
+>   if (!user) throw new UnauthorizedException('Reset token is invalid or expired');
+>   const passwordHash = await bcrypt.hash(newPassword, BCRYPT_ROUNDS);
+>   await this.prisma.user.update({
+>     where: { id: user.id },
+>     data: { passwordHash, refreshTokenHash: null, passwordResetToken: null, passwordResetExpiry: null },
+>   });
+> }
+> ```
+>
+> **Integration test to add to `test/auth.e2e-spec.ts`:**
+> `POST /auth/forgot-password` with valid email → HTTP 204 + `sgMail.send` was called with correct `to` address (mock SendGrid in e2e with `jest.mock('@sendgrid/mail')`).
 
 - [ ] **Step 3.4: Run tests — verify they pass**
 
@@ -504,6 +548,7 @@ git commit -m "feat(auth): add AuthService with register, login, refresh, OAuth 
 ---
 
 ## Task 4: Google OAuth strategy
+Depends-on: 3
 
 **Files:**
 - Create: `apps/api/src/auth/strategies/google.strategy.ts`
@@ -564,6 +609,7 @@ git commit -m "feat(auth): add Google OAuth strategy"
 ---
 
 ## Task 5: Apple OAuth strategy
+Depends-on: 3
 
 **Files:**
 - Create: `apps/api/src/auth/strategies/apple.strategy.ts`
@@ -633,6 +679,7 @@ git commit -m "feat(auth): add Apple Sign In strategy"
 ---
 
 ## Task 6: AuthController + AuthModule
+Depends-on: 3, 4, 5
 
 **Files:**
 - Create: `apps/api/src/auth/auth.controller.ts`
@@ -790,6 +837,7 @@ git commit -m "feat(auth): add AuthController and AuthModule, register in AppMod
 ---
 
 ## Task 7: Generate RS256 key pair + update .env
+Depends-on: 6
 
 **Files:**
 - Modify: `apps/api/.env`
@@ -838,6 +886,7 @@ git status  # should show no changes to tracked files
 ---
 
 ## Task 8: Auth e2e integration tests
+Depends-on: 7
 
 **Files:**
 - Create: `apps/api/test/auth.e2e-spec.ts`
@@ -1049,9 +1098,10 @@ At the end of this phase you have:
 - ✅ Logout immediately invalidates refresh token
 - ✅ Google OAuth — upserts user on callback, redirects to frontend with tokens
 - ✅ Apple Sign In — same pattern as Google
-- ✅ Password reset — JWT-based, signed, 1-hour expiry, sent via SendGrid
+- ✅ **Password reset — DB-token approach** (UUID stored in `passwordResetToken`/`passwordResetExpiry` on User model, 1-hour expiry, full branded HTML email via SendGrid with styled button link; `resetPassword` consumes and clears the DB token)
+- ✅ **Prisma schema additions:** `passwordResetToken String?` and `passwordResetExpiry DateTime?` on User model; migration `add-user-password-reset-fields`
 - ✅ `JwtAuthGuard` ready to protect any route with `@UseGuards(JwtAuthGuard)`
-- ✅ 11 e2e integration tests covering all auth flows
+- ✅ 11 e2e integration tests covering all auth flows; integration test for forgot-password with mocked SendGrid
 - ✅ All unit tests pass
 
 **Next plan:** `2026-06-16-backend-api-phase3.md` — Users, Workspaces, WorkspaceMemberGuard, invitations, Categories (CRUD + seed defaults), Transactions (CRUD + pagination + filtering)
