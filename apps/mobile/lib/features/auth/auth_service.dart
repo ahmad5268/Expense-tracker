@@ -1,3 +1,4 @@
+import 'dart:convert';
 import '../../core/api/api_client.dart';
 import '../../core/auth/secure_storage_service.dart';
 import '../../shared/models/user.dart';
@@ -42,10 +43,12 @@ class AuthService {
   }
 
   Future<User> _handleAuthResponse(Map<String, dynamic> data) async {
+    final user = User.fromJson(data['user'] as Map<String, dynamic>);
     await _storage.saveTokens(
       accessToken: data['accessToken'] as String,
       refreshToken: data['refreshToken'] as String,
     );
-    return User.fromJson(data['user'] as Map<String, dynamic>);
+    await _storage.saveUser(jsonEncode(user.toJson()));
+    return user;
   }
 }

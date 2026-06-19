@@ -47,16 +47,22 @@ class ApiClient {
             final refreshToken = await _storage.getRefreshToken();
             if (refreshToken == null) throw Exception('No refresh token');
 
-            final response = await dio.post(
+            // Use a separate Dio instance without the auth interceptor so
+            // the refresh token is sent in Authorization instead of the
+            // access token being injected by onRequest.
+            final refreshDio = Dio(BaseOptions(
+              baseUrl: _baseUrl,
+              connectTimeout: const Duration(seconds: 10),
+              receiveTimeout: const Duration(seconds: 10),
+              headers: {'Content-Type': 'application/json'},
+            ));
+            final response = await refreshDio.post(
               '/auth/refresh',
-              data: {'refreshToken': refreshToken},
-              options: Options(headers: {'Authorization': null}),
+              options: Options(headers: {'Authorization': 'Bearer $refreshToken'}),
             );
 
-            final newAccess =
-                response.data['data']['accessToken'] as String;
-            final newRefresh =
-                response.data['data']['refreshToken'] as String;
+            final newAccess = response.data['data']['accessToken'] as String;
+            final newRefresh = response.data['data']['refreshToken'] as String;
             await _storage.saveTokens(
               accessToken: newAccess,
               refreshToken: newRefresh,
@@ -68,7 +74,6 @@ class ApiClient {
             final retried = await dio.fetch(retryOptions);
             handler.resolve(retried);
           } catch (_) {
-            // Only clear tokens if the refresh itself failed, not if the retry failed
             if (!tokenRefreshed) await _storage.clearTokens();
             handler.next(error);
           } finally {

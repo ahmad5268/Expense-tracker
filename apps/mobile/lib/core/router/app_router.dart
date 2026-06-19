@@ -55,6 +55,7 @@ final appRouterProvider = Provider<GoRouter>((ref) {
     refreshListenable: authListenable,
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
+      if (authState.isLoading) return null; // wait for session check before redirecting
       final isAuthenticated = authState.valueOrNull != null;
       final isOnAuthRoute = _authRoutes.contains(state.matchedLocation);
 

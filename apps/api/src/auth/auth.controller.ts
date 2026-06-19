@@ -54,6 +54,12 @@ export class AuthController {
     return this.authService.login(dto);
   }
 
+  @Get('me')
+  @UseGuards(JwtAuthGuard)
+  me(@CurrentUser() user: JwtPayload) {
+    return this.authService.getMe(user.sub);
+  }
+
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
   @UseGuards(JwtRefreshGuard)

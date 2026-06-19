@@ -23,6 +23,18 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   bool _isSubmitting = false;
 
   @override
+  void initState() {
+    super.initState();
+    // Categories are loaded when the transactions screen is visited. If the
+    // sheet is opened from the dashboard before that, load them now.
+    Future.microtask(() {
+      if (ref.read(transactionsNotifierProvider).categories.isEmpty) {
+        ref.read(transactionsNotifierProvider.notifier).load();
+      }
+    });
+  }
+
+  @override
   void dispose() {
     _amountController.dispose();
     super.dispose();

@@ -9,6 +9,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 class SecureStorageService {
   static const _accessKey = 'access_token';
   static const _refreshKey = 'refresh_token';
+  static const _userKey = 'user_data';
 
   final FlutterSecureStorage? _secure;
   final SharedPreferences? _prefs;
@@ -52,14 +53,29 @@ class SecureStorageService {
     return _secure!.read(key: _refreshKey);
   }
 
+  Future<void> saveUser(String userJson) async {
+    if (_prefs != null) {
+      await _prefs.setString(_userKey, userJson);
+    } else {
+      await _secure!.write(key: _userKey, value: userJson);
+    }
+  }
+
+  Future<String?> getUser() async {
+    if (_prefs != null) return _prefs.getString(_userKey);
+    return _secure!.read(key: _userKey);
+  }
+
   Future<void> clearTokens() async {
     final prefs = _prefs;
     if (prefs != null) {
       await prefs.remove(_accessKey);
       await prefs.remove(_refreshKey);
+      await prefs.remove(_userKey);
     } else {
       await _secure!.delete(key: _accessKey);
       await _secure.delete(key: _refreshKey);
+      await _secure.delete(key: _userKey);
     }
   }
 }

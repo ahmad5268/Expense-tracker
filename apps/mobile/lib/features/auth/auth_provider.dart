@@ -13,7 +13,22 @@ final authServiceProvider = Provider<AuthService>((ref) {
 
 class AuthNotifier extends AsyncNotifier<User?> {
   @override
-  Future<User?> build() async => null;
+  Future<User?> build() async {
+    final storage = ref.read(secureStorageProvider);
+    final accessToken = await storage.getAccessToken();
+    if (accessToken == null) return null;
+
+    // Token exists — validate it (or refresh if expired) via /auth/me.
+    // The Dio interceptor handles 401 → refresh → retry automatically.
+    // It also clears tokens when refresh fails, so we don't do that here.
+    try {
+      final api = ref.read(apiClientProvider);
+      final response = await api.dio.get('/auth/me');
+      return User.fromJson(response.data['data'] as Map<String, dynamic>);
+    } catch (_) {
+      return null;
+    }
+  }
 
   Future<void> login({required String email, required String password}) async {
     state = const AsyncLoading();
