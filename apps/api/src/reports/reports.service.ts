@@ -171,7 +171,9 @@ export class ReportsService {
       workspace.currency,
     ]);
 
-    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    // Prefix dangerous formula-trigger chars to prevent CSV injection in Excel/Sheets
+    const sanitize = (v: string) => /^[=+\-@\t\r]/.test(v) ? `'${v}` : v;
+    const escape = (v: string) => `"${sanitize(v).replace(/"/g, '""')}"`;
     const body = [headers, ...csvRows].map((row) => row.map(escape).join(',')).join('\n');
 
     return Buffer.from(BOM + body, 'utf-8');
