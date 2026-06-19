@@ -21,11 +21,11 @@
 | 1 | be-1 ∥ fl-1 | COMPLETE | docs/contracts/wave-1-foundation.md |
 | 2 | be-2 ∥ fl-2 | COMPLETE | docs/contracts/wave-2-auth.md |
 | 3 | be-3 ∥ fl-3 | COMPLETE | — |
-| 4 | be-4 ∥ fl-4 ∥ fl-5 ∥ fl-6 ∥ fl-9 | IN_PROGRESS | — |
-| 5 | be-5 ∥ fl-7 ∥ fl-8 | PENDING | — |
-| 6 | be-6 ∥ fl-10 | PENDING | — |
-| 7 | be-7 | PENDING | — |
-| 8 | be-8 | PENDING | — |
+| 4 | be-4 ∥ fl-4 ∥ fl-5 ∥ fl-6 ∥ fl-9 | COMPLETE | — |
+| 5 | be-5 ∥ fl-7 ∥ fl-8 | COMPLETE | — |
+| 6 | be-6 ∥ fl-10 | COMPLETE | — |
+| 7 | be-7 | COMPLETE | — |
+| 8 | be-8 | COMPLETE | — |
 
 ---
 
@@ -34,21 +34,21 @@
 - [x] be-1 — Backend API Phase 1 (Foundation) — commit bea989a
 - [x] be-2 — Backend API Phase 2 (Auth) — commits 4a43d33, d592777
 - [x] be-3 — Backend API Phase 3 (Core Domain) — commit bc2b48c
-- [ ] be-4 — Backend API Phase 4 (Budgets + Recurring)
-- [ ] be-5 — Backend API Phase 5 (Background Jobs)
-- [ ] be-6 — Backend API Phase 6 (Notifications)
-- [ ] be-7 — Backend API Phase 7 (Reports + Export)
-- [ ] be-8 — Backend API Phase 8 (Docker + CI/CD)
+- [x] be-4 — Backend API Phase 4 (Budgets + Recurring) — commit af01e93
+- [x] be-5 — Backend API Phase 5 (Background Jobs) — commit 3410c6d
+- [x] be-6 — Backend API Phase 6 (Notifications) — commit ddd390a
+- [x] be-7 — Backend API Phase 7 (Reports + Export) — commit 75628cb
+- [x] be-8 — Backend API Phase 8 (Docker + CI/CD) — commit de34dd9
 - [x] fl-1 — Flutter Phase 1 (Foundation) — verified: 8/8 tests pass, flutter analyze clean
 - [x] fl-2 — Flutter Phase 2 (Auth UI) — commit 79dd37f
 - [x] fl-3 — Flutter Phase 3 (Shared Models + WorkspaceProvider) — commit bc2b48c
-- [ ] fl-4 — Flutter Phase 4 (Dashboard)
-- [ ] fl-5 — Flutter Phase 5 (Transactions UI)
-- [ ] fl-6 — Flutter Phase 6 (Workspaces UI)
-- [ ] fl-7 — Flutter Phase 7 (Budgets + Recurring UI)
-- [ ] fl-8 — Flutter Phase 8 (Reports UI)
-- [ ] fl-9 — Flutter Phase 9 (Notifications UI)
-- [ ] fl-10 — Flutter Phase 10 (CI/CD + Deploy)
+- [x] fl-4 — Flutter Phase 4 (Dashboard) — commit 296338f
+- [x] fl-5 — Flutter Phase 5 (Transactions UI) — commit 296338f
+- [x] fl-6 — Flutter Phase 6 (Workspaces UI) — commit 296338f
+- [x] fl-7 — Flutter Phase 7 (Budgets + Recurring UI) — commit c32dc33
+- [x] fl-8 — Flutter Phase 8 (Reports UI) — commit eedd3ef
+- [x] fl-9 — Flutter Phase 9 (Notifications UI) — commit 296338f
+- [x] fl-10 — Flutter Phase 10 (CI/CD + Deploy) — commit e7f4e40
 
 ---
 
