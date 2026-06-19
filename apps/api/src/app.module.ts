@@ -13,6 +13,7 @@ import { BudgetsModule } from './budgets/budgets.module';
 import { RecurringModule } from './recurring/recurring.module';
 import { JobsModule } from './jobs/jobs.module';
 import { NotificationsModule } from './notifications/notifications.module';
+import { ReportsModule } from './reports/reports.module';
 import { AppController } from './app.controller';
 
 @Module({
@@ -31,6 +32,7 @@ import { AppController } from './app.controller';
     RecurringModule,
     JobsModule,
     NotificationsModule,
+    ReportsModule,
   ],
   controllers: [AppController],
 })
