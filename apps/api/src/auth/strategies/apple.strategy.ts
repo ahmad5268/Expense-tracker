@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import Strategy from 'passport-apple';
+import { Strategy } from 'passport-apple';
 import { AuthService } from '../auth.service';
 
 @Injectable()
 export class AppleStrategy extends PassportStrategy(Strategy, 'apple') {
   constructor(private readonly authService: AuthService) {
     super({
-      clientID: process.env.APPLE_CLIENT_ID ?? '',
-      teamID: process.env.APPLE_TEAM_ID ?? '',
-      keyID: process.env.APPLE_KEY_ID ?? '',
-      privateKeyString: process.env.APPLE_PRIVATE_KEY ?? '',
+      clientID: process.env.APPLE_CLIENT_ID ?? 'not-configured',
+      teamID: process.env.APPLE_TEAM_ID ?? 'not-configured',
+      keyID: process.env.APPLE_KEY_ID ?? 'not-configured',
+      privateKeyString: process.env.APPLE_PRIVATE_KEY ?? 'not-configured',
       callbackURL: process.env.APPLE_CALLBACK_URL ?? 'http://localhost:3000/auth/apple/callback',
       scope: ['email', 'name'],
       // TODO(security): add CSRF state once express-session is configured (see google.strategy.ts)
