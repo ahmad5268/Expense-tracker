@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'notifications_provider.dart';
 
 class NotificationBell extends ConsumerWidget {
@@ -33,7 +34,7 @@ class NotificationBell extends ConsumerWidget {
             ),
         ],
       ),
-      onPressed: () => Navigator.of(context).pushNamed('/notifications'),
+      onPressed: () => context.go('/notifications'),
     );
   }
 }

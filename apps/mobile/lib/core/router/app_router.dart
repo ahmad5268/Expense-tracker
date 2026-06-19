@@ -17,6 +17,7 @@ import '../../features/workspaces/accept_invite_screen.dart';
 import '../../features/budgets/budgets_screen.dart';
 import '../../features/recurring/recurring_screen.dart';
 import '../../features/reports/reports_screen.dart';
+import '../shell/app_shell.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -41,7 +42,6 @@ final _authRoutes = {
   AppRoutes.register,
   AppRoutes.forgotPassword,
 };
-
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = ValueNotifier<AsyncValue<Object?>>(const AsyncLoading());
@@ -76,25 +76,30 @@ final appRouterProvider = Provider<GoRouter>((ref) {
         path: AppRoutes.inviteAccept,
         builder: (_, state) => AcceptInviteScreen(token: state.pathParameters['token']!),
       ),
-      GoRoute(path: AppRoutes.dashboard, builder: (_, __) => const DashboardScreen()),
-      GoRoute(path: AppRoutes.transactions, builder: (_, __) => const TransactionsScreen()),
-      GoRoute(path: AppRoutes.budgets, builder: (_, __) => const BudgetsScreen()),
-      GoRoute(path: AppRoutes.recurring, builder: (_, __) => const RecurringScreen()),
-      GoRoute(path: AppRoutes.reports, builder: (_, __) => const ReportsScreen()),
-      GoRoute(path: AppRoutes.notifications, builder: (_, __) => const NotificationsScreen()),
-      GoRoute(path: AppRoutes.workspaces, builder: (_, __) => const WorkspacesScreen()),
-      GoRoute(path: AppRoutes.workspacesCreate, builder: (_, __) => const CreateWorkspaceScreen()),
-      GoRoute(
-        path: AppRoutes.workspaceSettings,
-        builder: (_, state) => WorkspaceSettingsScreen(workspaceId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: AppRoutes.workspaceMembers,
-        builder: (_, state) => MembersScreen(workspaceId: state.pathParameters['id']!),
-      ),
-      GoRoute(
-        path: AppRoutes.workspaceInvite,
-        builder: (_, state) => InviteScreen(workspaceId: state.pathParameters['id']!),
+      ShellRoute(
+        builder: (context, state, child) => AppShell(child: child),
+        routes: [
+          GoRoute(path: AppRoutes.dashboard, builder: (_, __) => const DashboardScreen()),
+          GoRoute(path: AppRoutes.transactions, builder: (_, __) => const TransactionsScreen()),
+          GoRoute(path: AppRoutes.budgets, builder: (_, __) => const BudgetsScreen()),
+          GoRoute(path: AppRoutes.recurring, builder: (_, __) => const RecurringScreen()),
+          GoRoute(path: AppRoutes.reports, builder: (_, __) => const ReportsScreen()),
+          GoRoute(path: AppRoutes.notifications, builder: (_, __) => const NotificationsScreen()),
+          GoRoute(path: AppRoutes.workspaces, builder: (_, __) => const WorkspacesScreen()),
+          GoRoute(path: AppRoutes.workspacesCreate, builder: (_, __) => const CreateWorkspaceScreen()),
+          GoRoute(
+            path: AppRoutes.workspaceSettings,
+            builder: (_, state) => WorkspaceSettingsScreen(workspaceId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: AppRoutes.workspaceMembers,
+            builder: (_, state) => MembersScreen(workspaceId: state.pathParameters['id']!),
+          ),
+          GoRoute(
+            path: AppRoutes.workspaceInvite,
+            builder: (_, state) => InviteScreen(workspaceId: state.pathParameters['id']!),
+          ),
+        ],
       ),
     ],
   );

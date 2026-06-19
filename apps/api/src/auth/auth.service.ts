@@ -13,9 +13,18 @@ import { RefreshPayload } from './strategies/jwt-refresh.strategy';
 
 const BCRYPT_ROUNDS = 12;
 
+export interface AuthUser {
+  id: string;
+  email: string;
+  name: string;
+  avatarUrl: string | null;
+  oauthProvider: string | null;
+}
+
 export interface TokenPair {
   accessToken: string;
   refreshToken: string;
+  user: AuthUser;
 }
 
 @Injectable()
@@ -34,7 +43,7 @@ export class AuthService {
       data: { email: dto.email, passwordHash, name: dto.name },
     });
 
-    return this.issueTokens(user.id, user.email);
+    return this.issueTokens(user);
   }
 
   async login(dto: LoginDto): Promise<TokenPair> {
@@ -44,7 +53,7 @@ export class AuthService {
     const valid = await bcrypt.compare(dto.password, user.passwordHash);
     if (!valid) throw new UnauthorizedException('Invalid credentials');
 
-    return this.issueTokens(user.id, user.email);
+    return this.issueTokens(user);
   }
 
   async refresh(payload: RefreshPayload): Promise<TokenPair> {
@@ -54,7 +63,7 @@ export class AuthService {
     const valid = await bcrypt.compare(payload.refreshToken, user.refreshTokenHash);
     if (!valid) throw new UnauthorizedException('Refresh token invalid');
 
-    return this.issueTokens(user.id, user.email);
+    return this.issueTokens(user);
   }
 
   async logout(userId: string): Promise<void> {
@@ -88,7 +97,7 @@ export class AuthService {
       });
     }
 
-    return this.issueTokens(user.id, user.email);
+    return this.issueTokens(user);
   }
 
   async forgotPassword(email: string): Promise<void> {
@@ -141,8 +150,8 @@ export class AuthService {
     });
   }
 
-  private async issueTokens(userId: string, email: string): Promise<TokenPair> {
-    const jwtPayload: JwtPayload = { sub: userId, email };
+  private async issueTokens(user: { id: string; email: string; name: string; avatarUrl: string | null; oauthProvider: string | null }): Promise<TokenPair> {
+    const jwtPayload: JwtPayload = { sub: user.id, email: user.email };
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(jwtPayload, { expiresIn: '15m' }),
@@ -151,10 +160,20 @@ export class AuthService {
 
     const refreshTokenHash = await bcrypt.hash(refreshToken, BCRYPT_ROUNDS);
     await this.prisma.user.update({
-      where: { id: userId },
+      where: { id: user.id },
       data: { refreshTokenHash },
     });
 
-    return { accessToken, refreshToken };
+    return {
+      accessToken,
+      refreshToken,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        avatarUrl: user.avatarUrl,
+        oauthProvider: user.oauthProvider,
+      },
+    };
   }
 }

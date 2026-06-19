@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'workspace_provider.dart';
 
 class CreateWorkspaceScreen extends ConsumerStatefulWidget {
@@ -31,7 +32,7 @@ class _CreateWorkspaceScreenState extends ConsumerState<CreateWorkspaceScreen> {
             name: _nameController.text.trim(),
             currency: _currency,
           );
-      if (mounted) Navigator.of(context).pop();
+      if (mounted) context.go('/');
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));

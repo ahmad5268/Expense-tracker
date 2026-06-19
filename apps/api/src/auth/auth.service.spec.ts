@@ -36,7 +36,7 @@ describe('AuthService', () => {
   describe('register', () => {
     it('hashes password and creates user', async () => {
       mockPrisma.user.findUnique.mockResolvedValue(null);
-      mockPrisma.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.com', name: 'Ali' });
+      mockPrisma.user.create.mockResolvedValue({ id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null });
       mockPrisma.user.update.mockResolvedValue({});
       mockJwt.signAsync.mockResolvedValue('token');
 
@@ -65,13 +65,14 @@ describe('AuthService', () => {
   describe('login', () => {
     it('returns tokens on valid credentials', async () => {
       const hash = await bcrypt.hash('secret123', 12);
-      mockPrisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com', passwordHash: hash });
+      mockPrisma.user.findUnique.mockResolvedValue({ id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null, passwordHash: hash });
       mockPrisma.user.update.mockResolvedValue({});
       mockJwt.signAsync.mockResolvedValue('token');
 
       const result = await service.login({ email: 'a@b.com', password: 'secret123' });
       expect(result).toHaveProperty('accessToken');
       expect(result).toHaveProperty('refreshToken');
+      expect(result).toHaveProperty('user');
     });
 
     it('throws UnauthorizedException on wrong password', async () => {
