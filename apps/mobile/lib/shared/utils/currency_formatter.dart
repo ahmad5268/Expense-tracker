@@ -21,4 +21,11 @@ class CurrencyFormatter {
       default: return '$code ';
     }
   }
+
+  static String compact(int cents) {
+    final amount = cents / 100.0;
+    if (amount >= 1000000) return '\$${(amount / 1000000).toStringAsFixed(1)}M';
+    if (amount >= 1000) return '\$${(amount / 1000).toStringAsFixed(1)}k';
+    return '\$${amount.toStringAsFixed(0)}';
+  }
 }
