@@ -14,6 +14,9 @@ import '../../features/workspaces/workspace_settings_screen.dart';
 import '../../features/workspaces/members_screen.dart';
 import '../../features/workspaces/invite_screen.dart';
 import '../../features/workspaces/accept_invite_screen.dart';
+import '../../features/budgets/budgets_screen.dart';
+import '../../features/recurring/recurring_screen.dart';
+import '../../features/reports/reports_screen.dart';
 
 class AppRoutes {
   static const login = '/login';
@@ -39,16 +42,6 @@ final _authRoutes = {
   AppRoutes.forgotPassword,
 };
 
-class _PlaceholderScreen extends StatelessWidget {
-  final String name;
-  const _PlaceholderScreen(this.name);
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: Text(name)),
-        body: Center(child: Text(name)),
-      );
-}
 
 final appRouterProvider = Provider<GoRouter>((ref) {
   final authListenable = ValueNotifier<AsyncValue<Object?>>(const AsyncLoading());
@@ -85,9 +78,9 @@ final appRouterProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(path: AppRoutes.dashboard, builder: (_, __) => const DashboardScreen()),
       GoRoute(path: AppRoutes.transactions, builder: (_, __) => const TransactionsScreen()),
-      GoRoute(path: AppRoutes.budgets, builder: (_, __) => const _PlaceholderScreen('Budgets')),
-      GoRoute(path: AppRoutes.recurring, builder: (_, __) => const _PlaceholderScreen('Recurring')),
-      GoRoute(path: AppRoutes.reports, builder: (_, __) => const _PlaceholderScreen('Reports')),
+      GoRoute(path: AppRoutes.budgets, builder: (_, __) => const BudgetsScreen()),
+      GoRoute(path: AppRoutes.recurring, builder: (_, __) => const RecurringScreen()),
+      GoRoute(path: AppRoutes.reports, builder: (_, __) => const ReportsScreen()),
       GoRoute(path: AppRoutes.notifications, builder: (_, __) => const NotificationsScreen()),
       GoRoute(path: AppRoutes.workspaces, builder: (_, __) => const WorkspacesScreen()),
       GoRoute(path: AppRoutes.workspacesCreate, builder: (_, __) => const CreateWorkspaceScreen()),
