@@ -54,6 +54,8 @@ export class MonthlySummaryProcessor {
 
       const monthName = new Date(prevYear, prevMonth - 1, 1).toLocaleString('en-US', { month: 'long' });
       const formatCents = (cents: number) => (cents / 100).toFixed(2);
+      const esc = (s: string) =>
+        s.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
 
       for (const { userId } of workspace.members) {
         const notifData = {
@@ -75,11 +77,11 @@ export class MonthlySummaryProcessor {
             from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
             subject: `Your ${monthName} ${prevYear} expense summary`,
             html: `
-              <h2>${workspace.name} — ${monthName} ${prevYear}</h2>
-              <p>Income: <strong>${formatCents(totalIncome)} ${workspace.currency}</strong></p>
-              <p>Expenses: <strong>${formatCents(totalExpense)} ${workspace.currency}</strong></p>
-              <p>Net balance: <strong>${formatCents(net)} ${workspace.currency}</strong></p>
-              <p><a href="${process.env.FRONTEND_URL}/workspaces/${workspace.id}/reports">View full report</a></p>
+              <h2>${esc(workspace.name)} &mdash; ${monthName} ${prevYear}</h2>
+              <p>Income: <strong>${formatCents(totalIncome)} ${esc(workspace.currency)}</strong></p>
+              <p>Expenses: <strong>${formatCents(totalExpense)} ${esc(workspace.currency)}</strong></p>
+              <p>Net balance: <strong>${formatCents(net)} ${esc(workspace.currency)}</strong></p>
+              <p><a href="${esc(process.env.FRONTEND_URL ?? '')}/${encodeURIComponent(workspace.id)}/reports">View full report</a></p>
             `,
           });
         }
