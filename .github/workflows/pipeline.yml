@@ -1,0 +1,115 @@
+name: Agentic Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      plan_file:
+        description: "Path to the plan file (e.g. docs/superpowers/plans/2026-06-17-pipeline.md)"
+        required: true
+        type: string
+      task_index:
+        description: "Start from task N (0-based, optional)"
+        required: false
+        default: ""
+        type: string
+
+env:
+  CI: "true"
+
+jobs:
+  run-pipeline:
+    name: "Run Agentic Pipeline"
+    runs-on: ubuntu-latest
+    environment: pipeline-gate
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Python deps (pytest only)
+        run: pip install pytest
+
+      - name: Install API deps
+        working-directory: apps/api
+        run: npm ci
+
+      - name: Set up Docker (PostgreSQL + Redis)
+        run: docker compose up -d
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+
+      - name: Wait for DB ready
+        run: |
+          until docker compose exec -T postgres pg_isready -U postgres; do
+            echo "waiting for postgres..."; sleep 2
+          done
+
+      - name: Run pipeline tests
+        run: pytest tools/workflow/tests/ -v
+
+      - name: Install Claude CLI
+        run: npm install -g @anthropic-ai/claude-code
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Run pipeline
+        run: |
+          if [ -n "${{ inputs.task_index }}" ]; then
+            python -m tools.workflow.orchestrator \
+              --plan "${{ inputs.plan_file }}" \
+              --task "${{ inputs.task_index }}" \
+              --ci
+          else
+            python -m tools.workflow.orchestrator \
+              --plan "${{ inputs.plan_file }}" \
+              --ci
+          fi
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          JWT_PRIVATE_KEY: ${{ secrets.JWT_PRIVATE_KEY }}
+          JWT_PUBLIC_KEY: ${{ secrets.JWT_PUBLIC_KEY }}
+          SENDGRID_API_KEY: ${{ secrets.SENDGRID_API_KEY }}
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID }}
+          GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET }}
+          APPLE_CLIENT_ID: ${{ secrets.APPLE_CLIENT_ID }}
+          APPLE_CLIENT_SECRET: ${{ secrets.APPLE_CLIENT_SECRET }}
+
+      - name: Upload blocked report (if any)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: blocked-report
+          path: .agents/state/blocked_report.md
+          if-no-files-found: ignore
+
+      - name: Upload pipeline state
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: pipeline-state
+          path: .agents/state/pipeline_state.json
+          if-no-files-found: ignore
