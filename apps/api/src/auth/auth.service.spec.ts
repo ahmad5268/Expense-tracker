@@ -4,10 +4,14 @@ import { PrismaService } from '../prisma/prisma.service';
 import { JwtService } from '@nestjs/jwt';
 import { ConflictException, UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { createHash } from 'crypto';
+
+const sha256 = (s: string) => createHash('sha256').update(s).digest('hex');
 
 const mockPrisma = {
   user: {
     findUnique: jest.fn(),
+    findUniqueOrThrow: jest.fn(),
     findFirst: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -119,6 +123,62 @@ describe('AuthService', () => {
       expect(updateCall.data.passwordResetExpiry).toBeNull();
       expect(updateCall.data.refreshTokenHash).toBeNull();
       expect(await bcrypt.compare('newpass123', updateCall.data.passwordHash)).toBe(true);
+    });
+  });
+
+  describe('getMe', () => {
+    it('returns user profile when found', async () => {
+      mockPrisma.user.findUniqueOrThrow.mockResolvedValue({
+        id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null,
+      });
+      const result = await service.getMe('u1');
+      expect(result).toHaveProperty('id', 'u1');
+      expect(result).toHaveProperty('email', 'a@b.com');
+    });
+
+    it('throws when user does not exist', async () => {
+      mockPrisma.user.findUniqueOrThrow.mockRejectedValue(new Error('Not found'));
+      await expect(service.getMe('missing')).rejects.toThrow();
+    });
+  });
+
+  describe('refresh (token rotation)', () => {
+    it('returns new token pair and invalidates old token', async () => {
+      const hash = await bcrypt.hash(sha256('rawRefreshToken'), 10);
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null,
+        refreshTokenHash: hash,
+      });
+      mockPrisma.user.update.mockResolvedValue({});
+      mockJwt.signAsync.mockResolvedValue('newToken');
+
+      const result = await service.refresh({ sub: 'u1', email: 'a@b.com', refreshToken: 'rawRefreshToken' });
+      expect(result).toHaveProperty('accessToken');
+      expect(result).toHaveProperty('refreshToken');
+      // update is called to set new hash
+      expect(mockPrisma.user.update).toHaveBeenCalled();
+    });
+
+    it('throws UnauthorizedException when token hash does not match', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null,
+        refreshTokenHash: await bcrypt.hash('correct', 10),
+      });
+
+      await expect(
+        service.refresh({ sub: 'u1', email: 'a@b.com', refreshToken: 'wrong' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('throws UnauthorizedException when user has no refresh token stored', async () => {
+      mockPrisma.user.findUnique.mockResolvedValue({
+        id: 'u1', email: 'a@b.com', name: 'Ali', avatarUrl: null, oauthProvider: null,
+        refreshTokenHash: null,
+      });
+
+      await expect(
+        service.refresh({ sub: 'u1', email: 'a@b.com', refreshToken: 'any' }),
+      ).rejects.toThrow(UnauthorizedException);
     });
   });
 });

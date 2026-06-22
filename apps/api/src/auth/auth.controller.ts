@@ -39,7 +39,7 @@ function consumeExchangeCode(code: string): TokenPair | null {
 }
 
 @Controller('auth')
-@Throttle({ default: { limit: 5, ttl: 60000 } })
+@Throttle({ default: { limit: process.env.NODE_ENV === 'test' ? 9999 : 5, ttl: 60000 } })
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 

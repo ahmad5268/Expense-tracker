@@ -219,14 +219,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           child: Icon(icon, color: Colors.white, size: 18),
         ),
         const SizedBox(width: 12),
-        Text(label, style: const TextStyle(color: Colors.white, fontSize: 14)),
+        Expanded(child: Text(label, style: const TextStyle(color: Colors.white, fontSize: 14))),
       ],
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final isWide = MediaQuery.of(context).size.width >= 800;
+    final isWide = MediaQuery.of(context).size.width >= 1024;
 
     if (isWide) {
       return Scaffold(

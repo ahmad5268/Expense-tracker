@@ -45,7 +45,7 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
       final items = (response.data['data'] as List)
           .map((j) => NotificationItem.fromJson(j as Map<String, dynamic>))
           .toList();
-      final unread = items.where((n) => n.readAt == null).length;
+      final unread = items.where((n) => !n.isRead).length;
       state = NotificationsState(items: items, unreadCount: unread, isLoading: false);
     } catch (_) {
       state = state.copyWith(isLoading: false);
@@ -66,7 +66,7 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
   Future<void> markAllRead() async {
     await _api.dio.patch('/notifications/read-all');
     state = state.copyWith(
-      items: state.items.map((n) => n.copyWith(readAt: DateTime.now())).toList(),
+      items: state.items.map((n) => n.copyWith(isRead: true)).toList(),
       unreadCount: 0,
     );
   }

@@ -4,7 +4,7 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
-import { randomUUID } from 'crypto';
+import { randomUUID, createHash } from 'crypto';
 import { addHours } from 'date-fns';
 import { RegisterDto } from './dto/register.dto';
 import { LoginDto } from './dto/login.dto';
@@ -12,6 +12,11 @@ import { JwtPayload } from '../common/decorators/current-user.decorator';
 import { RefreshPayload } from './strategies/jwt-refresh.strategy';
 
 const BCRYPT_ROUNDS = 12;
+
+// bcrypt truncates inputs at 72 bytes; JWT tokens are ~500 bytes.
+// sha256 the token first so bcrypt receives a unique 64-char hex string.
+const digestToken = (token: string): string =>
+  createHash('sha256').update(token).digest('hex');
 
 export interface AuthUser {
   id: string;
@@ -71,7 +76,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
     if (!user?.refreshTokenHash) throw new UnauthorizedException('Refresh token invalid');
 
-    const valid = await bcrypt.compare(payload.refreshToken, user.refreshTokenHash);
+    const valid = await bcrypt.compare(digestToken(payload.refreshToken), user.refreshTokenHash);
     if (!valid) throw new UnauthorizedException('Refresh token invalid');
 
     return this.issueTokens(user);
@@ -125,19 +130,26 @@ export class AuthService {
 
     const resetLink = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
 
-    const sgMail = await import('@sendgrid/mail');
-    sgMail.default.setApiKey(process.env.SENDGRID_API_KEY ?? '');
-    await sgMail.default.send({
-      to: email,
-      from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
-      subject: 'Reset your Expense Tracker password',
-      html: `
-        <h2>Password Reset Request</h2>
-        <p>Click the link below to reset your password. This link expires in 1 hour.</p>
-        <p><a href="${resetLink}" style="background:#4f46e5;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none">Reset Password</a></p>
-        <p>If you didn't request this, ignore this email.</p>
-      `,
-    });
+    if (process.env.SENDGRID_API_KEY) {
+      try {
+        const sgMail = await import('@sendgrid/mail');
+        sgMail.default.setApiKey(process.env.SENDGRID_API_KEY);
+        await sgMail.default.send({
+          to: email,
+          from: process.env.SENDGRID_FROM_EMAIL ?? 'noreply@expensetracker.app',
+          subject: 'Reset your Expense Tracker password',
+          html: `
+            <h2>Password Reset Request</h2>
+            <p>Click the link below to reset your password. This link expires in 1 hour.</p>
+            <p><a href="${resetLink}" style="background:#4f46e5;color:#fff;padding:12px 24px;border-radius:6px;text-decoration:none">Reset Password</a></p>
+            <p>If you didn't request this, ignore this email.</p>
+          `,
+        });
+      } catch (err) {
+        // Log email errors but don't expose them — caller always gets 204
+        console.error('[auth] forgot-password email failed:', err);
+      }
+    }
   }
 
   async resetPassword(token: string, newPassword: string): Promise<void> {
@@ -166,10 +178,10 @@ export class AuthService {
 
     const [accessToken, refreshToken] = await Promise.all([
       this.jwt.signAsync(jwtPayload, { expiresIn: '15m' }),
-      this.jwt.signAsync(jwtPayload, { expiresIn: '30d' }),
+      this.jwt.signAsync({ ...jwtPayload, jti: randomUUID() }, { expiresIn: '30d' }),
     ]);
 
-    const refreshTokenHash = await bcrypt.hash(refreshToken, BCRYPT_ROUNDS);
+    const refreshTokenHash = await bcrypt.hash(digestToken(refreshToken), BCRYPT_ROUNDS);
     await this.prisma.user.update({
       where: { id: user.id },
       data: { refreshTokenHash },

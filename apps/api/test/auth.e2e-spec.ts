@@ -22,10 +22,15 @@ describe('Auth (e2e)', () => {
     await app.init();
 
     prisma = module.get(PrismaService);
+
+    // Clean up any leftover test users from previous interrupted runs
+    await prisma.user.deleteMany({ where: { email: { contains: 'e2e-auth@' } } });
+    await prisma.user.deleteMany({ where: { email: { in: ['e2e-auth-me@test.com', 'e2e-auth-rotation@test.com'] } } });
   });
 
   afterAll(async () => {
     await prisma.user.deleteMany({ where: { email: { contains: 'e2e-auth@' } } });
+    await prisma.user.deleteMany({ where: { email: { in: ['e2e-auth-me@test.com', 'e2e-auth-rotation@test.com'] } } });
     await app.close();
   });
 
@@ -78,6 +83,9 @@ describe('Auth (e2e)', () => {
 
       expect(res.body.data).toHaveProperty('accessToken');
       expect(res.body.data).toHaveProperty('refreshToken');
+      // Update shared tokens — login rotates the refresh token in the DB
+      accessToken = res.body.data.accessToken;
+      refreshToken = res.body.data.refreshToken;
     });
 
     it('returns 401 on wrong password', async () => {
@@ -149,6 +157,50 @@ describe('Auth (e2e)', () => {
         .post('/auth/forgot-password')
         .send({ email: 'nobody@nowhere.com' })
         .expect(204);
+    });
+  });
+
+  describe('GET /auth/me', () => {
+    it('returns user profile with valid access token', async () => {
+      const regRes = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'e2e-auth-me@test.com', password: 'Password123!', name: 'Me Test' });
+      const token = regRes.body.data.accessToken;
+
+      const res = await request(app.getHttpServer())
+        .get('/auth/me')
+        .set('Authorization', `Bearer ${token}`)
+        .expect(200);
+
+      expect(res.body.data).toHaveProperty('id');
+      expect(res.body.data).toHaveProperty('email', 'e2e-auth-me@test.com');
+      expect(res.body.data).toHaveProperty('name');
+    });
+
+    it('returns 401 without token', async () => {
+      await request(app.getHttpServer()).get('/auth/me').expect(401);
+    });
+  });
+
+  describe('Refresh token rotation', () => {
+    it('old refresh token is rejected after a single use', async () => {
+      const regRes = await request(app.getHttpServer())
+        .post('/auth/register')
+        .send({ email: 'e2e-auth-rotation@test.com', password: 'Password123!', name: 'Rotation Test' });
+      const oldRefreshToken = regRes.body.data.refreshToken;
+
+      // Use it once
+      const firstRefresh = await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Authorization', `Bearer ${oldRefreshToken}`)
+        .expect(200);
+      expect(firstRefresh.body.data).toHaveProperty('accessToken');
+
+      // Try to use the OLD token again — must fail
+      await request(app.getHttpServer())
+        .post('/auth/refresh')
+        .set('Authorization', `Bearer ${oldRefreshToken}`)
+        .expect(401);
     });
   });
 });

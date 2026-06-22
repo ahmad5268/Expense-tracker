@@ -1,6 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Readable } from 'stream';
+// eslint-disable-next-line @typescript-eslint/no-require-imports
+const PDFDocument = require('pdfkit') as typeof import('pdfkit');
+import { format } from 'date-fns';
 
 @Injectable()
 export class ReportsService {
@@ -9,8 +12,8 @@ export class ReportsService {
   async getSummary(workspaceId: string, year: number, month: number) {
     const rows = await this.prisma.$queryRaw<{ type: string; total: bigint }[]>`
       SELECT type, SUM(amount) AS total
-      FROM transactions
-      WHERE workspace_id = ${workspaceId}
+      FROM "Transaction"
+      WHERE "workspaceId" = ${workspaceId}
         AND EXTRACT(YEAR FROM date) = ${year}
         AND EXTRACT(MONTH FROM date) = ${month}
       GROUP BY type
@@ -31,17 +34,17 @@ export class ReportsService {
       total: bigint;
       count: bigint;
     }[]>`
-      SELECT t.category_id AS "categoryId",
+      SELECT t."categoryId",
              c.name AS "categoryName",
              SUM(t.amount) AS total,
              COUNT(t.id) AS count
-      FROM transactions t
-      JOIN categories c ON c.id = t.category_id
-      WHERE t.workspace_id = ${workspaceId}
+      FROM "Transaction" t
+      JOIN "Category" c ON c.id = t."categoryId"
+      WHERE t."workspaceId" = ${workspaceId}
         AND t.type = 'EXPENSE'
         AND EXTRACT(YEAR FROM t.date) = ${year}
         AND EXTRACT(MONTH FROM t.date) = ${month}
-      GROUP BY t.category_id, c.name
+      GROUP BY t."categoryId", c.name
       ORDER BY total DESC
     `;
 
@@ -53,8 +56,8 @@ export class ReportsService {
       SELECT EXTRACT(MONTH FROM date)::int AS month,
              type,
              SUM(amount) AS total
-      FROM transactions
-      WHERE workspace_id = ${workspaceId}
+      FROM "Transaction"
+      WHERE "workspaceId" = ${workspaceId}
         AND EXTRACT(YEAR FROM date) = ${year}
       GROUP BY month, type
       ORDER BY month ASC
@@ -72,23 +75,23 @@ export class ReportsService {
       actualAmount: bigint;
     }[]>`
       SELECT b.id AS "budgetId",
-             b.category_id AS "categoryId",
+             b."categoryId",
              c.name AS "categoryName",
              b.amount AS "budgetAmount",
              COALESCE(SUM(t.amount), 0) AS "actualAmount"
-      FROM budgets b
-      LEFT JOIN categories c ON c.id = b.category_id
-      LEFT JOIN transactions t
-        ON t.workspace_id = b.workspace_id
-        AND (b.category_id IS NULL OR t.category_id = b.category_id)
+      FROM "Budget" b
+      LEFT JOIN "Category" c ON c.id = b."categoryId"
+      LEFT JOIN "Transaction" t
+        ON t."workspaceId" = b."workspaceId"
+        AND (b."categoryId" IS NULL OR t."categoryId" = b."categoryId")
         AND t.type = 'EXPENSE'
         AND EXTRACT(YEAR FROM t.date) = ${year}
         AND EXTRACT(MONTH FROM t.date) = ${month}
-      WHERE b.workspace_id = ${workspaceId}
+      WHERE b."workspaceId" = ${workspaceId}
         AND b.period = 'MONTHLY'
         AND b.year = ${year}
         AND b.month = ${month}
-      GROUP BY b.id, b.category_id, c.name, b.amount
+      GROUP BY b.id, b."categoryId", c.name, b.amount
     `;
 
     return rows.map((r) => ({
@@ -109,8 +112,8 @@ export class ReportsService {
              EXTRACT(MONTH FROM date)::int AS month,
              type,
              SUM(amount) AS total
-      FROM transactions
-      WHERE workspace_id = ${workspaceId}
+      FROM "Transaction"
+      WHERE "workspaceId" = ${workspaceId}
         AND date >= NOW() - INTERVAL '2 years'
       GROUP BY year, month, type
       ORDER BY year ASC, month ASC
@@ -123,8 +126,8 @@ export class ReportsService {
     const rows = await this.prisma.$queryRaw<{ day: string; total: bigint }[]>`
       SELECT TO_CHAR(date, 'YYYY-MM-DD') AS day,
              SUM(amount) AS total
-      FROM transactions
-      WHERE workspace_id = ${workspaceId}
+      FROM "Transaction"
+      WHERE "workspaceId" = ${workspaceId}
         AND type = 'EXPENSE'
         AND EXTRACT(YEAR FROM date) = ${year}
       GROUP BY day
@@ -152,9 +155,9 @@ export class ReportsService {
              c.name AS "categoryName",
              t.amount,
              t.description
-      FROM transactions t
-      JOIN categories c ON c.id = t.category_id
-      WHERE t.workspace_id = ${workspaceId}
+      FROM "Transaction" t
+      JOIN "Category" c ON c.id = t."categoryId"
+      WHERE t."workspaceId" = ${workspaceId}
         AND EXTRACT(YEAR FROM t.date) = ${year}
         AND EXTRACT(MONTH FROM t.date) = ${month}
       ORDER BY t.date ASC
@@ -180,9 +183,6 @@ export class ReportsService {
   }
 
   async exportPdf(workspaceId: string, year: number, month: number): Promise<Readable> {
-    const { default: PDFDocument } = await import('pdfkit');
-    const { format } = await import('date-fns');
-
     const workspace = await this.prisma.workspace.findUniqueOrThrow({
       where: { id: workspaceId },
       select: { name: true, currency: true },
