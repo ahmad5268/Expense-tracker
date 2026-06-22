@@ -51,7 +51,8 @@ void main() {
                 'meta': {'total': 1, 'page': 1, 'limit': 20, 'totalPages': 1},
               }),
           queryParameters: {'page': 1, 'limit': 20})
-      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, {'data': []}));
+      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, <dynamic>[]));
+
 
     await container.read(transactionsNotifierProvider.notifier).load();
     final state = container.read(transactionsNotifierProvider);
@@ -88,7 +89,8 @@ void main() {
                 'meta': {'total': 0, 'page': 1, 'limit': 20, 'totalPages': 1},
               }),
           queryParameters: {'page': 1, 'limit': 20, 'type': 'EXPENSE'})
-      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, {'data': []}));
+      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, <dynamic>[]));
+
 
     const filter = TransactionFilter(type: TransactionType.expense);
     await container.read(transactionsNotifierProvider.notifier).setFilter(filter);

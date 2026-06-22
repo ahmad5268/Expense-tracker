@@ -49,6 +49,7 @@ class TransactionsState {
   final int totalPages;
   final TransactionFilter filter;
   final bool isLoading;
+  final String? error;
 
   const TransactionsState({
     this.transactions = const [],
@@ -57,6 +58,7 @@ class TransactionsState {
     this.totalPages = 1,
     this.filter = const TransactionFilter(),
     this.isLoading = false,
+    this.error,
   });
 
   TransactionsState copyWith({
@@ -66,6 +68,8 @@ class TransactionsState {
     int? totalPages,
     TransactionFilter? filter,
     bool? isLoading,
+    String? error,
+    bool clearError = false,
   }) =>
       TransactionsState(
         transactions: transactions ?? this.transactions,
@@ -74,6 +78,7 @@ class TransactionsState {
         totalPages: totalPages ?? this.totalPages,
         filter: filter ?? this.filter,
         isLoading: isLoading ?? this.isLoading,
+        error: clearError ? null : (error ?? this.error),
       );
 }
 
@@ -95,11 +100,12 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
         _api.dio.get('/workspaces/${workspace.id}/categories'),
       ]);
 
-      final txData = results[0].data;
+      final txData = results[0].data as Map<String, dynamic>;
       final txList = (txData['data'] as List)
           .map((j) => Transaction.fromJson(j as Map<String, dynamic>))
           .toList();
-      final catList = (results[1].data['data'] as List)
+      // Categories endpoint returns a plain array (no data wrapper)
+      final catList = (results[1].data as List)
           .map((j) => Category.fromJson(j as Map<String, dynamic>))
           .toList();
 
@@ -110,8 +116,8 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
         totalPages: txData['meta']['totalPages'] as int,
         isLoading: false,
       );
-    } catch (_) {
-      state = state.copyWith(isLoading: false);
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
     }
   }
 
@@ -121,7 +127,8 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
     final workspace = ref.read(activeWorkspaceProvider);
     if (workspace == null) return;
     final res = await _api.dio.get('/workspaces/${workspace.id}/categories');
-    final catList = (res.data['data'] as List)
+    // Categories endpoint returns a plain array (no data wrapper)
+    final catList = (res.data as List)
         .map((j) => Category.fromJson(j as Map<String, dynamic>))
         .toList();
     state = state.copyWith(categories: catList);

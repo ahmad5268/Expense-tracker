@@ -25,6 +25,15 @@ class Transaction with _$Transaction {
     required DateTime createdAt,
   }) = _Transaction;
 
-  factory Transaction.fromJson(Map<String, dynamic> json) =>
-      _$TransactionFromJson(json);
+  factory Transaction.fromJson(Map<String, dynamic> json) {
+    // API returns nested category: { name, icon } and user: { name }.
+    // The generated code looks for flat categoryName/categoryIcon keys, so
+    // we lift them here before delegating to the generated factory.
+    final cat = json['category'] as Map<String, dynamic>?;
+    return _$TransactionFromJson({
+      ...json,
+      if (cat != null) 'categoryName': cat['name'],
+      if (cat != null) 'categoryIcon': cat['icon'],
+    });
+  }
 }

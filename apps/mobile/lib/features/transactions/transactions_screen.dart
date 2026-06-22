@@ -51,6 +51,23 @@ class _TransactionsScreenState extends ConsumerState<TransactionsScreen> {
           Expanded(
             child: state.isLoading
                 ? const Center(child: CircularProgressIndicator())
+                : state.error != null && state.transactions.isEmpty
+                    ? Center(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.error_outline, color: Color(0xFFEF4444), size: 40),
+                            const SizedBox(height: 8),
+                            Text(state.error!, textAlign: TextAlign.center,
+                                style: const TextStyle(color: Color(0xFF64748B))),
+                            const SizedBox(height: 16),
+                            ElevatedButton(
+                              onPressed: () => ref.read(transactionsNotifierProvider.notifier).load(),
+                              child: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      )
                 : state.transactions.isEmpty
                     ? const Center(child: Text('No transactions found'))
                     : ListView.builder(
