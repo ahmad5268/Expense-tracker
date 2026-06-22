@@ -25,11 +25,9 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   @override
   void initState() {
     super.initState();
-    // Categories are loaded when the transactions screen is visited. If the
-    // sheet is opened from the dashboard before that, load them now.
     Future.microtask(() {
       if (ref.read(transactionsNotifierProvider).categories.isEmpty) {
-        ref.read(transactionsNotifierProvider.notifier).load();
+        ref.read(transactionsNotifierProvider.notifier).fetchCategories();
       }
     });
   }
@@ -68,7 +66,9 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
   @override
   Widget build(BuildContext context) {
     final state = ref.watch(transactionsNotifierProvider);
-    final categories = state.categories.where((c) => c.type.name == _type.name).toList();
+    final allCategories = state.categories;
+    final categories = allCategories.where((c) => c.type.name == _type.name).toList();
+    final categoriesLoading = allCategories.isEmpty;
 
     return Padding(
       padding: EdgeInsets.only(
@@ -96,11 +96,17 @@ class _AddTransactionSheetState extends ConsumerState<AddTransactionSheet> {
             const SizedBox(height: 16),
             const Text('Category', style: TextStyle(fontWeight: FontWeight.w600, fontSize: 14)),
             const SizedBox(height: 8),
-            CategoryPicker(
-              categories: categories,
-              selectedId: _categoryId,
-              onSelected: (id) => setState(() => _categoryId = id),
-            ),
+            if (categoriesLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 12),
+                child: Center(child: CircularProgressIndicator(strokeWidth: 2)),
+              )
+            else
+              CategoryPicker(
+                categories: categories,
+                selectedId: _categoryId,
+                onSelected: (id) => setState(() => _categoryId = id),
+              ),
             const SizedBox(height: 16),
             OutlinedButton.icon(
               icon: const Icon(Icons.calendar_today, size: 16),

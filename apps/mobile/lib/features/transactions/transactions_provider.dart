@@ -115,6 +115,18 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
     }
   }
 
+  // Lightweight fetch used by add-transaction sheet so a categories load
+  // never fails silently because of a concurrent transactions error.
+  Future<void> fetchCategories() async {
+    final workspace = ref.read(activeWorkspaceProvider);
+    if (workspace == null) return;
+    final res = await _api.dio.get('/workspaces/${workspace.id}/categories');
+    final catList = (res.data['data'] as List)
+        .map((j) => Category.fromJson(j as Map<String, dynamic>))
+        .toList();
+    state = state.copyWith(categories: catList);
+  }
+
   Future<void> create({
     required String categoryId,
     required int amount,

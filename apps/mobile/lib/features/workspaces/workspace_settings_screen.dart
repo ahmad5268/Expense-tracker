@@ -1,5 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'workspace_provider.dart';
 
 class WorkspaceSettingsScreen extends ConsumerWidget {
@@ -29,13 +30,13 @@ class WorkspaceSettingsScreen extends ConsumerWidget {
             title: const Text('Members'),
             subtitle: Text('${workspace.members.length} members'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).pushNamed('/workspaces/$workspaceId/settings/members'),
+            onTap: () => context.push('/workspaces/$workspaceId/settings/members'),
           ),
           ListTile(
             leading: const Icon(Icons.person_add_outlined),
             title: const Text('Invite Member'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => Navigator.of(context).pushNamed('/workspaces/$workspaceId/settings/invite'),
+            onTap: () => context.push('/workspaces/$workspaceId/settings/invite'),
           ),
           const Divider(),
           ListTile(

@@ -14,7 +14,7 @@ import 'package:expense_tracker/shared/models/workspace.dart';
 
 class _StubTransactionsNotifier extends TransactionsNotifier {
   final TransactionsState _initial;
-  bool loadCalled = false;
+  bool fetchCategoriesCalled = false;
 
   _StubTransactionsNotifier(this._initial);
 
@@ -22,8 +22,11 @@ class _StubTransactionsNotifier extends TransactionsNotifier {
   TransactionsState build() => _initial;
 
   @override
-  Future<void> load() async {
-    loadCalled = true;
+  Future<void> load() async {}
+
+  @override
+  Future<void> fetchCategories() async {
+    fetchCategoriesCalled = true;
   }
 
   @override
@@ -161,20 +164,22 @@ void main() {
     expect(find.text('Salary'), findsNothing);
   });
 
-  testWidgets('calls load when categories are empty on init', (tester) async {
-    // Empty categories — initState should trigger load()
+  testWidgets('calls fetchCategories when categories are empty on init',
+      (tester) async {
     final notifier = _StubTransactionsNotifier(
       const TransactionsState(categories: []),
     );
 
     await tester.pumpWidget(_buildSubject(txNotifier: notifier));
     await tester.tap(find.text('Open Sheet'));
-    await tester.pumpAndSettle();
+    // pump a few frames: pumpAndSettle would hang on CircularProgressIndicator
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    expect(notifier.loadCalled, isTrue);
+    expect(notifier.fetchCategoriesCalled, isTrue);
   });
 
-  testWidgets('does not call load when categories are already present',
+  testWidgets('does not call fetchCategories when categories are already present',
       (tester) async {
     final notifier = _StubTransactionsNotifier(
       const TransactionsState(categories: [_expenseCategory]),
@@ -184,7 +189,7 @@ void main() {
     await tester.tap(find.text('Open Sheet'));
     await tester.pumpAndSettle();
 
-    expect(notifier.loadCalled, isFalse);
+    expect(notifier.fetchCategoriesCalled, isFalse);
   });
 
   testWidgets('shows Expense and Income segment buttons', (tester) async {

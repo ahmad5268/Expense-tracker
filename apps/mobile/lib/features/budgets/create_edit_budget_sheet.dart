@@ -58,7 +58,7 @@ class _CreateEditBudgetSheetState extends ConsumerState<CreateEditBudgetSheet> {
       } else {
         await ref.read(budgetsNotifierProvider.notifier).addBudget(
               amount: amountCents,
-              period: _period,
+              period: _period.toUpperCase(),
               year: now.year,
               month: _period == 'monthly' ? now.month : null,
             );
