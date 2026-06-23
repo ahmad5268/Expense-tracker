@@ -51,13 +51,28 @@ export class WorkspacesService {
   }
 
   async findAll(userId: string) {
-    return this.prisma.workspace.findMany({
+    const workspaces = await this.prisma.workspace.findMany({
       where: { members: { some: { userId } } },
       include: {
-        members: { select: { userId: true, role: true } },
+        members: {
+          select: {
+            userId: true,
+            role: true,
+            user: { select: { name: true, avatarUrl: true } },
+          },
+        },
         _count: { select: { transactions: true } },
       },
     });
+    return workspaces.map((w) => ({
+      ...w,
+      members: w.members.map((m) => ({
+        userId: m.userId,
+        role: m.role,
+        name: m.user.name,
+        avatarUrl: m.user.avatarUrl,
+      })),
+    }));
   }
 
   async update(workspaceId: string, dto: UpdateWorkspaceDto) {

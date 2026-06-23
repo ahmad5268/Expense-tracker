@@ -45,10 +45,15 @@ describe('WorkspacesService', () => {
     );
   });
 
-  it('findAll returns user workspaces', async () => {
-    mockPrisma.workspace.findMany.mockResolvedValue([{ id: 'w1' }]);
+  it('findAll returns user workspaces with flattened member names', async () => {
+    mockPrisma.workspace.findMany.mockResolvedValue([{
+      id: 'w1', name: 'Test', currency: 'USD', ownerId: 'u1',
+      members: [{ userId: 'u1', role: 'OWNER', user: { name: 'Alice', avatarUrl: null } }],
+      _count: { transactions: 0 },
+    }]);
     const result = await service.findAll('u1');
     expect(result).toHaveLength(1);
+    expect(result[0].members[0]).toEqual({ userId: 'u1', role: 'OWNER', name: 'Alice', avatarUrl: null });
   });
 
   it('invite sends email to the invited address', async () => {
