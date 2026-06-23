@@ -28,6 +28,11 @@ class RecurringRule with _$RecurringRule {
     required bool isActive,
   }) = _RecurringRule;
 
-  factory RecurringRule.fromJson(Map<String, dynamic> json) =>
-      _$RecurringRuleFromJson(json);
+  factory RecurringRule.fromJson(Map<String, dynamic> json) {
+    final cat = json['category'] as Map<String, dynamic>?;
+    return _$RecurringRuleFromJson({
+      ...json,
+      if (cat != null) 'categoryName': cat['name'],
+    });
+  }
 }
