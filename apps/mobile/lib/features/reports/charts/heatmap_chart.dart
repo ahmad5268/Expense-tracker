@@ -26,7 +26,7 @@ class HeatmapChart extends ConsumerWidget {
     final dec31 = DateTime(year, 12, 31);
     final totalDays = dec31.difference(jan1).inDays + 1;
 
-    return Padding(
+    return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -52,8 +52,7 @@ class HeatmapChart extends ConsumerWidget {
               final total = dataByDay[key] ?? 0;
               final intensity = maxTotal > 0 ? total / maxTotal : 0.0;
               return Tooltip(
-                message:
-                    '$key: ${CurrencyFormatter.format(total, currency)}',
+                message: '$key: ${CurrencyFormatter.format(total, currency)}',
                 child: Container(
                   decoration: BoxDecoration(
                     color: Theme.of(context)

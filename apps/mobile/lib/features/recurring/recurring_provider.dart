@@ -34,8 +34,8 @@ class RecurringNotifier extends Notifier<List<RecurringRule>> {
           data: {
             'categoryId': categoryId,
             'amount': amount,
-            'type': type,
-            'frequency': frequency,
+            'type': type.toUpperCase(),
+            'frequency': frequency.toUpperCase(),
             'startDate': startDate.toIso8601String(),
             if (endDate != null) 'endDate': endDate.toIso8601String(),
             if (description != null) 'description': description,

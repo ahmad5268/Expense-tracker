@@ -37,21 +37,26 @@ void main() {
   tearDown(() => container.dispose());
 
   test('load fetches transactions and categories', () async {
+    // Mocks must mirror the wire format: TransformInterceptor wraps every
+    // response in { data: ... }. Transactions are double-wrapped because the
+    // service itself returns { data: [], meta: {} }.
     adapter
       ..onGet(
           '/workspaces/w1/transactions',
           (server) => server.reply(200, {
-                'data': [
-                  {
-                    'id': 't1', 'workspaceId': 'w1', 'userId': 'u1', 'categoryId': 'c1',
-                    'amount': 500, 'type': 'EXPENSE', 'date': '2026-06-01T00:00:00.000Z',
-                    'createdAt': '2026-06-01T00:00:00.000Z',
-                  },
-                ],
-                'meta': {'total': 1, 'page': 1, 'limit': 20, 'totalPages': 1},
+                'data': {
+                  'data': [
+                    {
+                      'id': 't1', 'workspaceId': 'w1', 'userId': 'u1', 'categoryId': 'c1',
+                      'amount': 500, 'type': 'EXPENSE', 'date': '2026-06-01T00:00:00.000Z',
+                      'createdAt': '2026-06-01T00:00:00.000Z',
+                    },
+                  ],
+                  'meta': {'total': 1, 'page': 1, 'limit': 20, 'totalPages': 1},
+                },
               }),
           queryParameters: {'page': 1, 'limit': 20})
-      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, <dynamic>[]));
+      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, {'data': <dynamic>[]}));
 
 
     await container.read(transactionsNotifierProvider.notifier).load();
@@ -85,11 +90,13 @@ void main() {
       ..onGet(
           '/workspaces/w1/transactions',
           (server) => server.reply(200, {
-                'data': [],
-                'meta': {'total': 0, 'page': 1, 'limit': 20, 'totalPages': 1},
+                'data': {
+                  'data': <dynamic>[],
+                  'meta': {'total': 0, 'page': 1, 'limit': 20, 'totalPages': 1},
+                },
               }),
           queryParameters: {'page': 1, 'limit': 20, 'type': 'EXPENSE'})
-      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, <dynamic>[]));
+      ..onGet('/workspaces/w1/categories', (server) => server.reply(200, {'data': <dynamic>[]}));
 
 
     const filter = TransactionFilter(type: TransactionType.expense);

@@ -42,7 +42,8 @@ class NotificationsNotifier extends Notifier<NotificationsState> {
     state = state.copyWith(isLoading: true);
     try {
       final response = await _api.dio.get('/notifications');
-      final items = (response.data['data'] as List)
+      final page = response.data['data'] as Map<String, dynamic>;
+      final items = (page['data'] as List)
           .map((j) => NotificationItem.fromJson(j as Map<String, dynamic>))
           .toList();
       final unread = items.where((n) => !n.isRead).length;

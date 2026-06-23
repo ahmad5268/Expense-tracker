@@ -100,20 +100,23 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
         _api.dio.get('/workspaces/${workspace.id}/categories'),
       ]);
 
-      final txData = results[0].data as Map<String, dynamic>;
-      final txList = (txData['data'] as List)
+      // TransformInterceptor wraps the service return value in { data: ... }.
+      // TransactionsService.findAll already returns { data: [], meta: {} }, so the
+      // wire format is { data: { data: [], meta: {} } } — one extra level to unwrap.
+      final outer = results[0].data as Map<String, dynamic>;
+      final inner = outer['data'] as Map<String, dynamic>;
+      final txList = (inner['data'] as List)
           .map((j) => Transaction.fromJson(j as Map<String, dynamic>))
           .toList();
-      // Categories endpoint returns a plain array (no data wrapper)
-      final catList = (results[1].data as List)
+      final catList = (results[1].data['data'] as List)
           .map((j) => Category.fromJson(j as Map<String, dynamic>))
           .toList();
 
       state = state.copyWith(
         transactions: txList,
         categories: catList,
-        total: txData['meta']['total'] as int,
-        totalPages: txData['meta']['totalPages'] as int,
+        total: inner['meta']['total'] as int,
+        totalPages: inner['meta']['totalPages'] as int,
         isLoading: false,
       );
     } catch (e) {
@@ -127,8 +130,7 @@ class TransactionsNotifier extends Notifier<TransactionsState> {
     final workspace = ref.read(activeWorkspaceProvider);
     if (workspace == null) return;
     final res = await _api.dio.get('/workspaces/${workspace.id}/categories');
-    // Categories endpoint returns a plain array (no data wrapper)
-    final catList = (res.data as List)
+    final catList = (res.data['data'] as List)
         .map((j) => Category.fromJson(j as Map<String, dynamic>))
         .toList();
     state = state.copyWith(categories: catList);

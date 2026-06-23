@@ -130,7 +130,7 @@ export class ReportsService {
       WHERE "workspaceId" = ${workspaceId}
         AND type = 'EXPENSE'
         AND EXTRACT(YEAR FROM date) = ${year}
-      GROUP BY day
+      GROUP BY TO_CHAR(date, 'YYYY-MM-DD')
       ORDER BY day ASC
     `;
 

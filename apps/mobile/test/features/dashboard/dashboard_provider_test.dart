@@ -54,8 +54,10 @@ void main() {
       ..onGet(
           '/workspaces/w1/transactions',
           (server) => server.reply(200, {
-                'data': [],
-                'meta': {'total': 0, 'page': 1, 'limit': 5, 'totalPages': 1},
+                'data': {
+                  'data': <dynamic>[],
+                  'meta': {'total': 0, 'page': 1, 'limit': 5, 'totalPages': 1},
+                },
               }),
           queryParameters: {'limit': 5, 'page': 1});
 

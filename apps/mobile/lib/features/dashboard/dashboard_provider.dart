@@ -59,7 +59,8 @@ class DashboardNotifier extends Notifier<DashboardState> {
       ]);
 
       final summary = results[0].data['data'] as Map<String, dynamic>;
-      final txList = (results[1].data['data'] as List)
+      final txPage = results[1].data['data'] as Map<String, dynamic>;
+      final txList = (txPage['data'] as List)
           .map((j) => Transaction.fromJson(j as Map<String, dynamic>))
           .toList();
 

@@ -30,18 +30,20 @@ void main() {
 
   test('load fetches notifications and counts unread', () async {
     adapter.onGet('/notifications', (server) => server.reply(200, {
-      'data': [
-        {
-          'id': 'n1', 'userId': 'u1', 'type': 'BUDGET_ALERT',
-          'payload': {}, 'isRead': false,
-          'createdAt': '2026-06-01T00:00:00.000Z',
-        },
-        {
-          'id': 'n2', 'userId': 'u1', 'type': 'MONTHLY_SUMMARY',
-          'payload': {}, 'isRead': true,
-          'createdAt': '2026-06-01T00:00:00.000Z',
-        },
-      ],
+      'data': {
+        'data': [
+          {
+            'id': 'n1', 'userId': 'u1', 'type': 'BUDGET_ALERT',
+            'payload': {}, 'isRead': false,
+            'createdAt': '2026-06-01T00:00:00.000Z',
+          },
+          {
+            'id': 'n2', 'userId': 'u1', 'type': 'MONTHLY_SUMMARY',
+            'payload': {}, 'isRead': true,
+            'createdAt': '2026-06-01T00:00:00.000Z',
+          },
+        ],
+      },
     }));
 
     await container.read(notificationsNotifierProvider.notifier).load();
